@@ -1,0 +1,24 @@
+# Render Blueprint for the FREE plan + Neon PostgreSQL (no Render database). Optional: you can also create the service by hand in the dashboard.
+# Notes: free web services sleep after ~15 min idle, have no shell, no pre-deploy command, and no cron jobs, so
+#   - migrations run in the BUILD command (safe to repeat)
+#   - the unpaid-order expiry job runs from GitHub Actions instead (.github/workflows/expire-orders.yml)
+services:
+  - type: web
+    name: ella-api
+    runtime: python
+    rootDir: backend
+    plan: free
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --noinput && python manage.py migrate --noinput
+    startCommand: gunicorn config.wsgi --bind 0.0.0.0:$PORT --workers 2 --timeout 60
+    healthCheckPath: /api/health/
+    envVars:
+      - { key: PYTHON_VERSION, value: 3.12.3 }
+      - { key: DJANGO_DEBUG, value: "false" }
+      - { key: DJANGO_SECRET_KEY, sync: false }   # generate locally, see README
+      - { key: DATABASE_URL, sync: false }        # Neon DIRECT connection string (secret)
+      - { key: FRONTEND_ORIGIN, sync: false }     # https://your-store-url (no trailing slash)
+      - { key: CLOUDINARY_URL, sync: false }      # cloudinary://KEY:SECRET@CLOUD_NAME (secret)
+      - { key: EMAIL_HOST, sync: false }          # optional: password-reset emails
+      - { key: EMAIL_HOST_USER, sync: false }
+      - { key: EMAIL_HOST_PASSWORD, sync: false }
+      - { key: DEFAULT_FROM_EMAIL, sync: false }

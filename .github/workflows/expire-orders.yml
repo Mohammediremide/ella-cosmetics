@@ -1,0 +1,26 @@
+# Cancels unpaid orders past the window set in Admin → Settings and puts their stock back (safe to repeat).
+# Free alternative to Render cron jobs. Needs two repository secrets: DATABASE_URL and DJANGO_SECRET_KEY
+# (GitHub repo → Settings → Secrets and variables → Actions). Does nothing until those exist.
+name: expire-unpaid-orders
+on:
+  schedule: [{ cron: "17 * * * *" }]   # hourly
+  workflow_dispatch: {}                 # lets you run it by hand from the Actions tab
+jobs:
+  expire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: { python-version: "3.12", cache: pip, cache-dependency-path: backend/requirements.txt }
+      - name: Run expire_orders
+        working-directory: backend
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
+          DJANGO_DEBUG: "false"
+          FRONTEND_ORIGIN: https://placeholder.invalid   # required by settings, unused by this job
+          ALLOW_LOCAL_MEDIA: "true"                      # this job touches no images
+        run: |
+          if [ -z "$DATABASE_URL" ]; then echo "DATABASE_URL secret not set: skipping"; exit 0; fi
+          pip install -r requirements.txt
+          python manage.py expire_orders
