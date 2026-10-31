@@ -158,8 +158,8 @@ if not DEBUG and not os.environ.get('CLOUDINARY_URL') and os.environ.get('ALLOW_
     # Uploaded photos/videos on a host's local disk disappear on restart/deploy
     raise RuntimeError('CLOUDINARY_URL must be set in production so uploaded images/videos survive restarts')
 if os.environ.get('CLOUDINARY_URL'):
-    # cloudinary_storage must be listed before django.contrib.staticfiles
-        INSTALLED_APPS = INSTALLED_APPS + ['cloudinary_storage', 'cloudinary']
+    # Keep these AFTER django.contrib.staticfiles (the library's collectstatic override crashes on Django 5.1+).
+    INSTALLED_APPS = INSTALLED_APPS + ['cloudinary_storage', 'cloudinary']
     STORAGES['default'] = {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'}
 
 # ---- Frontend origins / cookies / CSRF
