@@ -159,7 +159,7 @@ if not DEBUG and not os.environ.get('CLOUDINARY_URL') and os.environ.get('ALLOW_
     raise RuntimeError('CLOUDINARY_URL must be set in production so uploaded images/videos survive restarts')
 if os.environ.get('CLOUDINARY_URL'):
     # cloudinary_storage must be listed before django.contrib.staticfiles
-    INSTALLED_APPS = ['cloudinary_storage'] + INSTALLED_APPS + ['cloudinary']
+        INSTALLED_APPS = INSTALLED_APPS + ['cloudinary_storage', 'cloudinary']
     STORAGES['default'] = {'BACKEND': 'cloudinary_storage.storage.MediaCloudinaryStorage'}
 
 # ---- Frontend origins / cookies / CSRF
