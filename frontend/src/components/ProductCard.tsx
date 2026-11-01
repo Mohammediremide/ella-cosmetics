@@ -15,7 +15,7 @@ export default function ProductCard({ p }: { p: Product }) {
       <Link to={`/shop/${p.slug}`} className="relative block overflow-hidden rounded-brand bg-blush/40" aria-label={`View ${p.name}`}>
         <Img src={p.images[0]?.image} alt={p.images[0]?.alt_text || p.name} />
         {p.is_new && <span className="absolute left-3 top-3 rounded-full bg-burgundy px-2.5 py-0.5 text-[11px] font-semibold tracking-wider text-white">NEW</span>}
-        {out && <div className="absolute inset-0 bg-white/50" aria-hidden />}
+        {out && <div className="absolute inset-0 bg-surface/50" aria-hidden />}
       </Link>
       <div className="mt-3 flex flex-1 flex-col">
         {p.category && <p className="text-xs uppercase tracking-wider text-muted">{p.category.name}</p>}

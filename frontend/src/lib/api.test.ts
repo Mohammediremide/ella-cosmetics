@@ -40,3 +40,10 @@ describe('api()', () => {
     expect(heard).toHaveBeenCalledTimes(1)
   })
 })
+
+describe('api() with a broken proxy', () => {
+  it('treats an HTML 200 response (host served its own page) as an error, not as data', async () => {
+    vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('<!doctype html><html></html>', { status: 200, headers: { 'Content-Type': 'text/html' } }))
+    await expect(api('/categories/')).rejects.toMatchObject({ status: 502, code: 'bad_response' })
+  })
+})

@@ -12,9 +12,16 @@ PUBLIC_FIELDS = ['store_name', 'announcement', 'contact_email', 'contact_phone',
 
 
 class PublicSettingsSerializer(serializers.ModelSerializer):
+    # False when no email provider is configured: the site then hides "Forgot password" instead of promising an email it can't send
+    password_reset_enabled = serializers.SerializerMethodField()
+
+    def get_password_reset_enabled(self, _):
+        from django.conf import settings as dj
+        return dj.EMAIL_BACKEND != 'django.core.mail.backends.dummy.EmailBackend'
+
     class Meta:
         model = StoreSettings
-        fields = PUBLIC_FIELDS  # bank details are only revealed on the customer's own order
+        fields = PUBLIC_FIELDS + ['password_reset_enabled']  # bank details are only revealed on the customer's own order
 
 
 class AdminSettingsSerializer(serializers.ModelSerializer):

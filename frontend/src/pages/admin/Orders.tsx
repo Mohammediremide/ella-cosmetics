@@ -55,7 +55,7 @@ export default function Orders() {
               <div className="flex justify-between text-base font-medium"><span>Total</span><span>{naira(sel.total)}</span></div></section>
             <div className="mt-5 flex flex-wrap gap-2">{actions(sel).map((a) => <button key={a.kind + a.status} className={a.danger ? 'btn-outline' : 'btn-primary'} onClick={() => setPending(a)}>{a.label}</button>)}</div>
             {!!sel.audit?.length && <section className="mt-6"><p className="mb-2 text-xs uppercase tracking-wider text-muted">History</p>
-              <ul className="space-y-1 text-xs text-charcoal/80">{sel.audit.map((h, i) => <li key={i}>{new Date(h.at).toLocaleString('en-NG')} — {h.field}: {h.from} → <strong>{h.to}</strong> by {h.by}</li>)}</ul></section>}
+              <ul className="space-y-1 text-xs text-ink/80">{sel.audit.map((h, i) => <li key={i}>{new Date(h.at).toLocaleString('en-NG')} — {h.field}: {h.from} → <strong>{h.to}</strong> by {h.by}</li>)}</ul></section>}
           </aside>
         </div>
       )}

@@ -43,6 +43,8 @@ Payment statuses: Awaiting Payment → Processing — Awaiting Verification → 
 
 **Visits.** Admin → Overview shows visitors (unique per day) and page views for today / 7 / 30 days / all time, a daily chart and top pages. No cookies and no IP addresses are stored (daily-salted hash only); staff, bots and admin pages are excluded.
 
+**Dark mode.** A sun/moon button in the header (and the mobile menu and admin sidebar) switches between light and dark. First-time visitors get whatever their phone/computer is set to; their choice is remembered on that device. Colours live in `frontend/src/index.css` (`:root` and `:root[data-theme='dark']`).
+
 **Homepage slideshow.** Admin → *Homepage Slideshow*: upload MP4/WebM videos (up to 30 MB, ~10–20 s clips work best) or photos, add an optional headline, sub-text and button, reorder, hide or delete. Videos play muted, one after another; images show for 6 s. Visitors get pause/play, next/previous and dots (and reduced-motion users start paused). With no slides the homepage shows the default Ella Cosmetics banner. Products never appear in the hero. Videos on a live site are stored on Cloudinary (same `CLOUDINARY_URL`); keep clips short because they download to every visitor's phone.
 
 **Product images.** No stock photography is bundled. Products and sections without a photo show a branded placeholder. **Upload real photos in Admin → Products (edit a product → Images)** and section covers in **Admin → Manage Sections**. "Featured" on the product form only controls the Featured row on the homepage.
@@ -104,6 +106,10 @@ Never set `COOKIE_SAMESITE=None` to "make it work": it still fails on Safari and
 **Vercel plan.** Vercel's free Hobby plan is for non-commercial use only; a shop needs a paid plan (or another host that permits commercial use on its free tier, in which case use layout 2 above because rewrites differ by host). Check Vercel's current terms and pricing before launch.
 
 **Password reset email:** configure `EMAIL_*` (any SMTP provider). Without it, production discards reset emails.
+
+## 5b. Troubleshooting a deployed site
+- **Banner "We're having trouble reaching the store server" (or products/sections missing):** the storefront cannot reach the API. Open `https://YOUR-STORE-URL/api/health/` — it must show `{"status": "ok"}`. If it shows your website or a blank page instead, the Vercel rewrite in `frontend/vercel.json` isn't pointing at the right Render host (use the host of the service that says *Deployed*, no `https://`, both places), or `vercel.json` isn't inside the Vercel *Root Directory* (`frontend`). Fix, push, wait for the Vercel redeploy. If it shows an error from Render, open the Render service logs.
+- **First visit after a quiet period is slow (up to ~1 minute):** Render's free plan sleeps when idle.
 
 ## 6. Known limitations / owner to-do
 - Scheduler, Cloudinary, email delivery and the live deployment must be set up with your own accounts; they could not be verified here.

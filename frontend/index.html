@@ -6,6 +6,10 @@
     <title>Ella Cosmetics</title>
     <meta name="description" content="Beauty essentials for every day, every mood, and every version of you." />
     <meta name="theme-color" content="#632C3B" />
+    <script>
+      // Apply the saved/system theme BEFORE first paint so dark-mode visitors never see a white flash
+      (function () { try { var t = localStorage.getItem('ella_theme'); if (t !== 'light' && t !== 'dark') t = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'; document.documentElement.setAttribute('data-theme', t) } catch (e) {} })()
+    </script>
   </head>
   <body>
     <div id="root"></div>

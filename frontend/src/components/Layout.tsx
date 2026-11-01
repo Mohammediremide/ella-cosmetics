@@ -6,6 +6,7 @@ import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { useCart } from '../lib/cart'
 import type { Category, PublicSettings } from '../lib/types'
+import ThemeToggle from './ThemeToggle'
 
 export const usePublicSettings = () => useQuery({ queryKey: ['settings'], staleTime: 60_000, queryFn: () => api<PublicSettings>('/settings/') })
 // Sections come from the backend (active only, in the order the admin chose): nothing is hardcoded here
@@ -37,7 +38,7 @@ function CategoryMenu({ cats }: { cats: Category[] }) {
 }
 
 export default function Layout() {
-  const { data: s } = usePublicSettings()
+  const { data: s, isError: serverDown } = usePublicSettings()
   const { data: cats = [] } = useCategories()
   const { user, logout } = useAuth()
   const { count } = useCart()
@@ -61,7 +62,8 @@ export default function Layout() {
 
   return (
     <div className="flex min-h-screen flex-col">
-      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-white focus:p-3">Skip to content</a>
+      <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-surface focus:p-3">Skip to content</a>
+      {serverDown && <div role="alert" className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">We’re having trouble reaching the store server. Please refresh in a minute.</div>}
       {s?.announcement && <div className="bg-burgundy px-4 py-2 text-center text-xs tracking-wide text-white">{s.announcement}</div>}
       <header className="sticky top-0 z-40 border-b border-taupe/20 bg-ivory/95 backdrop-blur">
         <div className="container-x flex h-16 items-center justify-between gap-4">
@@ -73,6 +75,7 @@ export default function Layout() {
             {cats.length > 0 && <CategoryMenu cats={cats} />}
           </nav>
           <div className="flex items-center gap-1">
+            <ThemeToggle />
             <button className="btn-ghost px-3" aria-label="Search" aria-expanded={searching} onClick={() => setSearching((v) => !v)}><Search size={20} /></button>
             <Link to={user ? '/account' : '/login'} className="btn-ghost px-3" aria-label={user ? 'Account' : 'Sign in'}><UserIcon size={20} /></Link>
             <Link to="/cart" className="btn-ghost relative px-3" aria-label={`Cart, ${count} items`}>
@@ -99,7 +102,8 @@ export default function Layout() {
               <p className="mt-3 text-xs font-medium uppercase tracking-[0.2em] text-muted">Shop by Category</p>
               <Link className="py-3 font-serif text-2xl" to="/shop">All Products</Link>
               {cats.map((c) => <Link key={c.id} className="py-2.5 pl-3 text-lg" to={`/shop?category=${c.slug}`}>{c.name}</Link>)}
-              <Link className="mt-5 py-3 text-base" to={user ? '/account' : '/login'}>{user ? 'My account' : 'Sign in'}</Link>
+              <ThemeToggle withLabel className="mt-4 !justify-start !px-0" />
+              <Link className="py-3 text-base" to={user ? '/account' : '/login'}>{user ? 'My account' : 'Sign in'}</Link>
               {user?.is_staff && <Link className="py-3 text-base" to="/admin">Admin dashboard</Link>}
               {user && <button className="py-3 text-left text-base" onClick={() => logout()}>Sign out</button>}
             </nav>
@@ -109,21 +113,21 @@ export default function Layout() {
 
       <main id="main" className="flex-1"><Outlet /></main>
 
-      <footer className="mt-20 bg-charcoal pb-20 text-ivory md:pb-0">
+      <footer className="mt-20 bg-charcoal pb-20 text-cream md:pb-0">
         <div className="container-x grid gap-10 py-14 md:grid-cols-3">
-          <div><p className="font-serif text-2xl">{s?.store_name ?? 'Ella Cosmetics'}</p><p className="mt-3 max-w-xs text-sm text-ivory/75">Beauty essentials for every day, every mood, and every version of you.</p></div>
-          <nav aria-label="Footer" className="flex flex-col gap-2 text-sm"><p className="font-medium">Shop by Category</p><Link className="text-ivory/75 hover:text-white" to="/shop">All Products</Link>{cats.map((c) => <Link key={c.id} className="text-ivory/75 hover:text-white" to={`/shop?category=${c.slug}`}>{c.name}</Link>)}<Link className="mt-2" to="/account">My account</Link></nav>
+          <div><p className="font-serif text-2xl">{s?.store_name ?? 'Ella Cosmetics'}</p><p className="mt-3 max-w-xs text-sm text-cream/75">Beauty essentials for every day, every mood, and every version of you.</p></div>
+          <nav aria-label="Footer" className="flex flex-col gap-2 text-sm"><p className="font-medium">Shop by Category</p><Link className="text-cream/75 hover:text-white" to="/shop">All Products</Link>{cats.map((c) => <Link key={c.id} className="text-cream/75 hover:text-white" to={`/shop?category=${c.slug}`}>{c.name}</Link>)}<Link className="mt-2" to="/account">My account</Link></nav>
           <div className="flex flex-col gap-2 text-sm">
             <p className="font-medium">Contact</p>
-            {wa && <a className="text-ivory/75 hover:text-white" href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer">Chat on WhatsApp</a>}
-            {s?.contact_email && <a className="text-ivory/75" href={`mailto:${s.contact_email}`}>{s.contact_email}</a>}
-            {s?.contact_phone && <span className="text-ivory/75">{s.contact_phone}</span>}
-            {s?.instagram_url && <a className="text-ivory/75" href={s.instagram_url} target="_blank" rel="noreferrer">Instagram</a>}
-            {!wa && !s?.contact_email && !s?.contact_phone && <span className="text-ivory/60">Contact details coming soon.</span>}
-            <div className="mt-2 flex gap-4 text-ivory/75"><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link></div>
+            {wa && <a className="text-cream/75 hover:text-white" href={`https://wa.me/${wa}`} target="_blank" rel="noreferrer">Chat on WhatsApp</a>}
+            {s?.contact_email && <a className="text-cream/75" href={`mailto:${s.contact_email}`}>{s.contact_email}</a>}
+            {s?.contact_phone && <span className="text-cream/75">{s.contact_phone}</span>}
+            {s?.instagram_url && <a className="text-cream/75" href={s.instagram_url} target="_blank" rel="noreferrer">Instagram</a>}
+            {!wa && !s?.contact_email && !s?.contact_phone && <span className="text-cream/60">Contact details coming soon.</span>}
+            <div className="mt-2 flex gap-4 text-cream/75"><Link to="/privacy">Privacy</Link><Link to="/terms">Terms</Link></div>
           </div>
         </div>
-        <p className="border-t border-white/10 py-5 text-center text-xs text-ivory/60">© {new Date().getFullYear()} {s?.store_name ?? 'Ella Cosmetics'}. All rights reserved.</p>
+        <p className="border-t border-white/10 py-5 text-center text-xs text-cream/60">© {new Date().getFullYear()} {s?.store_name ?? 'Ella Cosmetics'}. All rights reserved.</p>
       </footer>
 
       {count > 0 && <Link to="/cart" className="btn-primary fixed inset-x-4 bottom-4 z-30 shadow-soft md:hidden">View cart · {count} {count === 1 ? 'item' : 'items'}</Link>}

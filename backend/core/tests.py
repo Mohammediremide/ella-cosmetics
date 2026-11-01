@@ -144,3 +144,13 @@ class ProductionGuardTests(TestCase):
     def test_missing_cloudinary_is_fatal_unless_explicitly_allowed(self):
         r = self.load(CLOUDINARY_URL=''); self.assertNotEqual(r.returncode, 0); self.assertIn('CLOUDINARY_URL', r.stderr)
         self.assertEqual(self.load(CLOUDINARY_URL='', ALLOW_LOCAL_MEDIA='true').returncode, 0)
+
+
+class PasswordResetAvailabilityTests(TestCase):
+    def test_flag_follows_email_configuration(self):
+        from django.test import override_settings
+        c = APIClient()
+        with override_settings(EMAIL_BACKEND='django.core.mail.backends.dummy.EmailBackend'):
+            self.assertIs(c.get('/api/settings/').json()['password_reset_enabled'], False)
+        with override_settings(EMAIL_BACKEND='django.core.mail.backends.smtp.EmailBackend'):
+            self.assertIs(c.get('/api/settings/').json()['password_reset_enabled'], True)

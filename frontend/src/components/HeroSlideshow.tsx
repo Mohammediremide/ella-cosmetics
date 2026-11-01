@@ -35,8 +35,8 @@ export default function HeroSlideshow({ slides }: { slides: Slide[] }) {
   const hasText = slide.title || slide.subtitle || slide.button_label
   const link = slide.link_url
   const cta = slide.button_label && link
-    ? (link.startsWith('/') ? <Link to={link} className="btn mt-5 bg-white px-8 text-burgundy hover:bg-blush">{slide.button_label}</Link>
-        : <a href={link} target="_blank" rel="noreferrer" className="btn mt-5 bg-white px-8 text-burgundy hover:bg-blush">{slide.button_label}</a>)
+    ? (link.startsWith('/') ? <Link to={link} className="btn mt-5 bg-surface px-8 text-burgundy hover:bg-blush">{slide.button_label}</Link>
+        : <a href={link} target="_blank" rel="noreferrer" className="btn mt-5 bg-surface px-8 text-burgundy hover:bg-blush">{slide.button_label}</a>)
     : null
 
   return (
@@ -62,7 +62,7 @@ export default function HeroSlideshow({ slides }: { slides: Slide[] }) {
         </div>
 
         <div className="absolute inset-x-0 bottom-0 flex items-center justify-between gap-3 p-3 sm:p-4">
-          <button type="button" onClick={() => setPaused((p) => !p)} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-burgundy hover:bg-white" aria-label={paused ? 'Play slideshow' : 'Pause slideshow'}>
+          <button type="button" onClick={() => setPaused((p) => !p)} className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-burgundy hover:bg-surface" aria-label={paused ? 'Play slideshow' : 'Pause slideshow'}>
             {paused ? <Play size={16} aria-hidden /> : <Pause size={16} aria-hidden />}
           </button>
           {n > 1 && (
@@ -70,11 +70,11 @@ export default function HeroSlideshow({ slides }: { slides: Slide[] }) {
               <div className="flex items-center gap-2" role="group" aria-label="Choose slide">
                 {slides.map((s, k) => (
                   <button key={s.id} type="button" onClick={() => setI(k)} aria-label={`Slide ${k + 1} of ${n}`} aria-current={k === idx ? 'true' : undefined}
-                    className="flex h-6 w-6 items-center justify-center"><span className={`block h-2.5 rounded-full transition-all ${k === idx ? 'w-7 bg-white' : 'w-2.5 bg-white/60'}`} /></button>))}
+                    className="flex h-6 w-6 items-center justify-center"><span className={`block h-2.5 rounded-full transition-all ${k === idx ? 'w-7 bg-surface' : 'w-2.5 bg-surface/60'}`} /></button>))}
               </div>
               <div className="flex gap-2">
-                <button type="button" onClick={prev} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-burgundy hover:bg-white" aria-label="Previous slide"><ChevronLeft size={18} aria-hidden /></button>
-                <button type="button" onClick={next} className="flex h-10 w-10 items-center justify-center rounded-full bg-white/90 text-burgundy hover:bg-white" aria-label="Next slide"><ChevronRight size={18} aria-hidden /></button>
+                <button type="button" onClick={prev} className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-burgundy hover:bg-surface" aria-label="Previous slide"><ChevronLeft size={18} aria-hidden /></button>
+                <button type="button" onClick={next} className="flex h-10 w-10 items-center justify-center rounded-full bg-surface/90 text-burgundy hover:bg-surface" aria-label="Next slide"><ChevronRight size={18} aria-hidden /></button>
               </div>
             </>
           )}

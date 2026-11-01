@@ -53,7 +53,7 @@ export default function Home() {
         <div className="md:col-span-6 lg:col-span-5">
           <p className="text-xs font-medium tracking-[0.25em] text-burgundy">YOUR BEAUTY, YOUR WAY</p>
           <h1 className="mt-4 text-5xl leading-[1.05] text-burgundy md:text-6xl lg:text-7xl">Discover your kind of beautiful.</h1>
-          <p className="mt-5 max-w-md text-lg text-charcoal/80">Explore beauty essentials selected to help you express yourself with confidence.</p>
+          <p className="mt-5 max-w-md text-lg text-ink/80">Explore beauty essentials selected to help you express yourself with confidence.</p>
           <div className="mt-8 flex flex-wrap gap-3"><Link to="/shop" className="btn-primary px-8">Shop All Products</Link>{cats[0] && <a href="#categories" className="btn-outline px-8">Shop by Category</a>}</div>
         </div>
         <div className="md:col-span-6 lg:col-span-7">

@@ -7,6 +7,7 @@ import { Eye, EyeOff } from 'lucide-react'
 import { ApiError, fieldError } from '../lib/api'
 import { useAuth } from '../lib/auth'
 import { Field } from '../components/ui'
+import { usePublicSettings } from '../components/Layout'
 
 const loginSchema = z.object({ email: z.string().email('Enter a valid email'), password: z.string().min(1, 'Enter your password') })
 const regSchema = z.object({ name: z.string().trim().min(2, 'Enter your name'), email: z.string().email('Enter a valid email'), password: z.string().min(8, 'Use at least 8 characters'), phone: z.string().optional() })
@@ -23,6 +24,7 @@ function Password({ id, reg, autoComplete }: { id: string; reg: any; autoComplet
 
 export default function Auth({ mode }: { mode: 'login' | 'register' }) {
   const { user, login, register: signUp } = useAuth()
+  const { data: store } = usePublicSettings()
   const [sp] = useSearchParams()
   const nav = useNavigate()
   const next = sp.get('next') || '/account'
@@ -44,7 +46,7 @@ export default function Auth({ mode }: { mode: 'login' | 'register' }) {
         {!isLogin && <Field label="Full name" htmlFor="name" error={(errors.name?.message as string) ?? fieldError(err, 'name')}><input id="name" className="input" autoComplete="name" {...register('name')} /></Field>}
         <Field label="Email" htmlFor="email" error={(errors.email?.message as string) ?? fieldError(err, 'email')}><input id="email" type="email" className="input" autoComplete="email" {...register('email')} /></Field>
         <Field label="Password" htmlFor="pw" error={(errors.password?.message as string) ?? fieldError(err, 'password')}><Password id="pw" autoComplete={isLogin ? 'current-password' : 'new-password'} reg={register('password')} /></Field>
-        {isLogin && <p className="-mt-2 text-right text-sm"><Link className="text-burgundy underline" to="/forgot-password">Forgot password?</Link></p>}
+        {isLogin && store?.password_reset_enabled && <p className="-mt-2 text-right text-sm"><Link className="text-burgundy underline" to="/forgot-password">Forgot password?</Link></p>}
         <button className="btn-primary w-full" disabled={isSubmitting}>{isSubmitting ? 'Please wait…' : isLogin ? 'Sign in' : 'Create account'}</button>
         <p className="text-center text-sm text-muted">{isLogin ? 'New here?' : 'Already have an account?'} <Link className="text-burgundy underline" to={`${isLogin ? '/register' : '/login'}${sp.get('next') ? `?next=${sp.get('next')}` : ''}`}>{isLogin ? 'Create an account' : 'Sign in'}</Link></p>
       </form>

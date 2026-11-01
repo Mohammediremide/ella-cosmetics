@@ -3,7 +3,17 @@
 @tailwind utilities;
 
 @layer base {
-  html { @apply bg-ivory text-charcoal font-sans antialiased; }
+  :root {
+    --c-ivory: 255 249 245; --c-surface: 255 255 255; --c-blush: 243 223 226; --c-rose: 197 140 152;
+    --c-burgundy: 99 44 59; --c-ink: 41 35 38; --c-muted: 107 92 88; --c-taupe: 155 138 134;
+    color-scheme: light;
+  }
+  :root[data-theme='dark'] {
+    --c-ivory: 27 21 23; --c-surface: 38 29 33; --c-blush: 61 41 48; --c-rose: 197 140 152;
+    --c-burgundy: 232 180 192; --c-ink: 243 233 230; --c-muted: 190 172 168; --c-taupe: 155 138 134;
+    color-scheme: dark;  /* native scrollbars, selects and date pickers follow the theme */
+  }
+  html { @apply bg-ivory text-ink font-sans antialiased; }
   h1, h2, h3 { @apply font-serif tracking-tight; }
   :focus-visible { @apply outline-2 outline-offset-2 outline-burgundy; }
   img { @apply max-w-full; }
@@ -12,11 +22,35 @@
   .btn { @apply inline-flex items-center justify-center gap-2 rounded-brand px-5 min-h-[44px] text-sm font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed; }
   .btn-primary { @apply btn bg-burgundy text-white hover:bg-charcoal; }
   .btn-outline { @apply btn border border-burgundy text-burgundy hover:bg-blush/60; }
-  .btn-ghost { @apply btn text-charcoal hover:bg-blush/50; }
-  .input { @apply w-full min-h-[44px] rounded-brand border border-taupe/50 bg-white px-3.5 text-sm placeholder:text-muted focus:border-burgundy; }
+  .btn-ghost { @apply btn text-ink hover:bg-blush/50; }
+  .input { @apply w-full min-h-[44px] rounded-brand border border-taupe/50 bg-surface px-3.5 text-sm placeholder:text-muted focus:border-burgundy; }
   .label { @apply mb-1.5 block text-sm font-medium; }
   .field-error { @apply mt-1 text-xs text-red-700; }
-  .card { @apply rounded-brand border border-taupe/20 bg-white shadow-soft; }
+  .card { @apply rounded-brand border border-taupe/20 bg-surface shadow-soft; }
   .container-x { @apply mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8; }
 }
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; scroll-behavior: auto !important; } }
+
+
+/* ---------- Dark theme adjustments ----------
+   Brand "burgundy" turns into a light rose for TEXT and BORDERS in dark mode, so filled buttons/badges keep a deep rose fill with white text. */
+:root[data-theme='dark'] .bg-burgundy, :root[data-theme='dark'] .btn-primary { background-color: #8E4158; }
+:root[data-theme='dark'] .btn-primary:hover { background-color: #A5566D; }
+:root[data-theme='dark'] .btn-outline:hover { background-color: rgb(var(--c-blush) / 0.7); }
+:root[data-theme='dark'] .bg-emerald-50 { background-color: rgb(16 185 129 / .14); }
+:root[data-theme='dark'] .text-emerald-700, :root[data-theme='dark'] .text-emerald-800, :root[data-theme='dark'] .text-emerald-900 { color: #6EE7B7; }
+:root[data-theme='dark'] .border-emerald-200 { border-color: rgb(16 185 129 / .4); }
+:root[data-theme='dark'] .bg-amber-50 { background-color: rgb(245 158 11 / .14); }
+:root[data-theme='dark'] .bg-amber-100 { background-color: rgb(245 158 11 / .22); }
+:root[data-theme='dark'] .text-amber-800, :root[data-theme='dark'] .text-amber-900 { color: #FCD34D; }
+:root[data-theme='dark'] .border-amber-200 { border-color: rgb(245 158 11 / .4); }
+:root[data-theme='dark'] .bg-red-50 { background-color: rgb(239 68 68 / .14); }
+:root[data-theme='dark'] .text-red-700, :root[data-theme='dark'] .text-red-800, :root[data-theme='dark'] .text-red-900 { color: #FCA5A5; }
+:root[data-theme='dark'] .border-red-200 { border-color: rgb(239 68 68 / .4); }
+:root[data-theme='dark'] .bg-stone-100 { background-color: rgb(168 162 158 / .2); }
+:root[data-theme='dark'] .text-stone-600, :root[data-theme='dark'] .text-stone-700 { color: #D6D3D1; }
+:root[data-theme='dark'] .bg-blue-50 { background-color: rgb(59 130 246 / .18); }
+:root[data-theme='dark'] .text-blue-800 { color: #93C5FD; }
+:root[data-theme='dark'] .bg-indigo-50 { background-color: rgb(99 102 241 / .2); }
+:root[data-theme='dark'] .text-indigo-800 { color: #A5B4FC; }
+:root[data-theme='dark'] .shadow-soft { box-shadow: 0 1px 2px rgba(0,0,0,.4), 0 4px 16px rgba(0,0,0,.35); }

@@ -103,7 +103,7 @@ export default function Slides() {
               {s.button_label && <p className="text-xs text-muted">Button: “{s.button_label}” → {s.link_url}</p>}
             </div>
             <div className="flex items-center gap-1">
-              <button role="switch" aria-checked={!!s.is_active} aria-label={`Slide ${i + 1} visible`} onClick={() => toggle.mutate(s)} disabled={toggle.isPending} className={`relative h-7 w-12 rounded-full transition-colors ${s.is_active ? 'bg-burgundy' : 'bg-taupe/60'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${s.is_active ? 'left-6' : 'left-1'}`} /></button>
+              <button role="switch" aria-checked={!!s.is_active} aria-label={`Slide ${i + 1} visible`} onClick={() => toggle.mutate(s)} disabled={toggle.isPending} className={`relative h-7 w-12 rounded-full transition-colors ${s.is_active ? 'bg-burgundy' : 'bg-taupe/60'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-surface transition-all ${s.is_active ? 'left-6' : 'left-1'}`} /></button>
               <button className="btn-ghost px-3" aria-label={`Edit slide ${i + 1}`} onClick={() => setEditing(s)}><Pencil size={16} /></button>
               <button className="btn-ghost px-3" aria-label={`Delete slide ${i + 1}`} onClick={() => setDel(s)}><Trash2 size={16} /></button>
             </div>

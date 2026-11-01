@@ -6,8 +6,10 @@ import { z } from 'zod'
 import { api, ApiError, fieldError } from '../lib/api'
 import { useToast } from '../lib/toast'
 import { Field } from '../components/ui'
+import { usePublicSettings } from '../components/Layout'
 
 export function ForgotPassword() {
+  const { data: store } = usePublicSettings()
   const [sent, setSent] = useState(false)
   const [err, setErr] = useState('')
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<{ email: string }>({ resolver: zodResolver(z.object({ email: z.string().email('Enter a valid email') })) })
@@ -15,6 +17,12 @@ export function ForgotPassword() {
     setErr('')
     try { await api('/auth/password-reset/', { method: 'POST', body: d }); setSent(true) } catch (e) { setErr(e instanceof ApiError ? e.message : 'Something went wrong') }
   })
+  if (store && !store.password_reset_enabled) return (
+    <div className="container-x flex justify-center py-12"><div className="card w-full max-w-md space-y-4 p-7">
+      <h1 className="text-3xl">Forgot your password?</h1>
+      <p className="text-sm">Online password reset isn’t available right now. Please contact us{store.whatsapp_number ? <> on <a className="font-medium text-burgundy underline" href={`https://wa.me/${store.whatsapp_number}`} target="_blank" rel="noreferrer">WhatsApp</a></> : ''} and we’ll help you get back into your account.</p>
+      <Link className="btn-outline w-full" to="/login">Back to sign in</Link></div></div>
+  )
   return (
     <div className="container-x flex justify-center py-12">
       <form onSubmit={submit} noValidate className="card w-full max-w-md space-y-4 p-7">

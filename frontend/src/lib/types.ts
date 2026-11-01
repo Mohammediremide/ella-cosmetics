@@ -16,7 +16,7 @@ export interface CartData { items: CartLine[]; subtotal: number | string; adjust
 export interface PublicSettings {
   store_name: string; announcement: string; contact_email: string; contact_phone: string; instagram_url: string; whatsapp_number: string
   currency_symbol: string; delivery_enabled: boolean; pickup_enabled: boolean; delivery_fee: string; pickup_instructions: string
-  legal_business_name: string; business_address: string; delivery_terms: string; returns_terms: string; unpaid_order_hours: number
+  password_reset_enabled: boolean; legal_business_name: string; business_address: string; delivery_terms: string; returns_terms: string; unpaid_order_hours: number
 }
 export interface OrderItem { id: number; product_name: string; unit_price: string; quantity: number; line_total: string }
 export interface Order {

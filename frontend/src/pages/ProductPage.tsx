@@ -40,10 +40,10 @@ export default function ProductPage() {
           <h1 className="mt-1 text-4xl">{p.name}</h1>
           <p className="mt-3 text-2xl">{naira(p.price)}</p>
           <div className="mt-3 flex items-center gap-3"><StockBadge status={p.stock_status} />{!out && <span className="text-sm text-muted">{p.stock_quantity} available</span>}</div>
-          <p className="mt-6 whitespace-pre-line leading-relaxed text-charcoal/80">{p.description || 'No description yet.'}</p>
+          <p className="mt-6 whitespace-pre-line leading-relaxed text-ink/80">{p.description || 'No description yet.'}</p>
           {!out && (
             <div className="mt-8 flex flex-wrap items-center gap-4">
-              <div className="flex items-center rounded-brand border border-taupe/50 bg-white" role="group" aria-label="Quantity">
+              <div className="flex items-center rounded-brand border border-taupe/50 bg-surface" role="group" aria-label="Quantity">
                 <button className="btn-ghost px-3" aria-label="Decrease quantity" onClick={() => setQty((q) => Math.max(1, q - 1))}><Minus size={16} /></button>
                 <span className="w-10 text-center" aria-live="polite">{Math.min(qty, Math.max(room, 1))}</span>
                 <button className="btn-ghost px-3" aria-label="Increase quantity" disabled={qty >= room} onClick={() => setQty((q) => q + 1)}><Plus size={16} /></button>

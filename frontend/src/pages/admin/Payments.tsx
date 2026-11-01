@@ -34,8 +34,8 @@ export default function Payments() {
       <div role="tablist" aria-label="Payment status" className="mt-6 flex flex-wrap gap-2">
         {TABS.map((t) => (
           <button key={t.key} role="tab" aria-selected={tab.key === t.key} onClick={() => { setTab(t); setPage(1) }}
-            className={`min-h-[44px] rounded-full border px-4 text-sm ${tab.key === t.key ? 'border-burgundy bg-burgundy text-white' : 'border-taupe/50 bg-white hover:border-burgundy'}`}>
-            {t.label}{!!badge(t.key) && <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${tab.key === t.key ? 'bg-white text-burgundy' : 'bg-burgundy text-white'}`}>{badge(t.key)}</span>}
+            className={`min-h-[44px] rounded-full border px-4 text-sm ${tab.key === t.key ? 'border-burgundy bg-burgundy text-white' : 'border-taupe/50 bg-surface hover:border-burgundy'}`}>
+            {t.label}{!!badge(t.key) && <span className={`ml-2 rounded-full px-2 py-0.5 text-xs font-semibold ${tab.key === t.key ? 'bg-surface text-burgundy' : 'bg-burgundy text-white'}`}>{badge(t.key)}</span>}
           </button>))}
       </div>
       <p className="mt-3 text-sm text-muted">{tab.hint}</p>

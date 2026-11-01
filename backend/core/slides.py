@@ -1,3 +1,4 @@
+import logging
 from django.db import transaction
 from django.db.models import Max
 from rest_framework import generics, serializers, status, viewsets
@@ -10,8 +11,17 @@ from catalog.serializers import RelativeImageField
 from .models import HeroSlide
 from .permissions import IsStaffUser
 
+log = logging.getLogger(__name__)
 MAX_VIDEO_BYTES = 30 * 1024 * 1024
 MAX_SLIDES = 10
+
+
+def safe_delete(fieldfile):
+    """Remove a stored file; a storage hiccup (e.g. Cloudinary unreachable) must never block editing or deleting the slide."""
+    try:
+        fieldfile.delete(save=False)
+    except Exception:  # noqa: BLE001
+        log.exception('Could not delete stored file %s', getattr(fieldfile, 'name', ''))
 
 
 def validate_video_file(f):
@@ -77,16 +87,16 @@ class AdminSlideSerializer(serializers.ModelSerializer):
         # Replacing the media: switching type clears the other one, and the old file is removed from storage
         if hasattr(data.get('video'), 'size'):
             if instance.image:
-                instance.image.delete(save=False)
+                safe_delete(instance.image)
             instance.image = ''
             if instance.video:
-                instance.video.delete(save=False)
+                safe_delete(instance.video)
         elif hasattr(data.get('image'), 'size'):
             if instance.video:
-                instance.video.delete(save=False)
+                safe_delete(instance.video)
             instance.video = ''
             if instance.image:
-                instance.image.delete(save=False)
+                safe_delete(instance.image)
         data.pop('video', None) if not hasattr(data.get('video'), 'size') else None
         data.pop('image', None) if not hasattr(data.get('image'), 'size') else None
         return super().update(instance, data)
@@ -112,9 +122,9 @@ class AdminSlideViewSet(viewsets.ModelViewSet):
 
     def perform_destroy(self, instance):
         if instance.video:
-            instance.video.delete(save=False)
+            safe_delete(instance.video)
         if instance.image:
-            instance.image.delete(save=False)
+            safe_delete(instance.image)
         instance.delete()
 
     @action(detail=False, methods=['post'])

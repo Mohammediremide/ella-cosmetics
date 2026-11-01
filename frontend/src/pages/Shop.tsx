@@ -31,7 +31,7 @@ export default function Shop() {
       <nav aria-label="Sections" className="-mx-4 mt-6 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:flex-wrap sm:px-0">
         {[{ id: 0, name: 'All Products', slug: '' }, ...cats].map((c) => (
           <button key={c.id} onClick={() => set('category', c.slug)} aria-current={slug === c.slug ? 'true' : undefined}
-            className={`min-h-[40px] shrink-0 rounded-full border px-4 text-sm transition-colors ${slug === c.slug ? 'border-burgundy bg-burgundy text-white' : 'border-taupe/50 bg-white hover:border-burgundy'}`}>{c.name}</button>))}
+            className={`min-h-[40px] shrink-0 rounded-full border px-4 text-sm transition-colors ${slug === c.slug ? 'border-burgundy bg-burgundy text-white' : 'border-taupe/50 bg-surface hover:border-burgundy'}`}>{c.name}</button>))}
       </nav>
       <div className="mt-5 grid gap-3 sm:grid-cols-3">
         <input className="input" type="search" placeholder="Search products" aria-label="Search products" defaultValue={sp.get('search') ?? ''} onKeyDown={(e) => e.key === 'Enter' && set('search', e.currentTarget.value)} onBlur={(e) => e.currentTarget.value !== (sp.get('search') ?? '') && set('search', e.currentTarget.value)} />

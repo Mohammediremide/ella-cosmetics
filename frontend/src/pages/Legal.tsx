@@ -14,7 +14,7 @@ export default function Legal({ kind }: { kind: 'privacy' | 'terms' }) {
     <div className="container-x max-w-2xl py-12">
       <h1 className="text-4xl">{kind === 'privacy' ? 'Privacy policy' : 'Terms of sale'}</h1>
       <p className="mt-3 rounded-brand bg-blush/50 p-3 text-xs leading-relaxed">This is a plain-language starter document and not legal advice. It does not guarantee compliance with any law. {name}’s owner should have it reviewed before launch. Highlighted items are details the owner still needs to provide.</p>
-      <div className="mt-6 space-y-6 leading-relaxed text-charcoal/85 [&_h2]:mb-2 [&_h2]:text-2xl">
+      <div className="mt-6 space-y-6 leading-relaxed text-ink/85 [&_h2]:mb-2 [&_h2]:text-2xl">
         <section><h2>Who we are</h2><p>This website is operated by {biz ?? name}{!biz && <> <Todo>registered business name, in Admin → Settings</Todo></>}. {s?.business_address ? `Address: ${s.business_address}.` : <Todo>business address, in Admin → Settings</Todo>} Contact: {contact || <Todo>contact details, in Admin → Settings</Todo>}.</p></section>
         {kind === 'privacy' ? (<>
           <section><h2>What we collect</h2><p>Your name, email address and password (stored only as a one-way hash) when you create an account; and your name, phone number, delivery address and order notes when you place an order. We also count visits to the site using an anonymous daily visitor code. We do not use advertising cookies and we don’t store your IP address for this.</p></section>

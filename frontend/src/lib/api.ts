@@ -34,6 +34,9 @@ export async function api<T = any>(path: string, opts: Opts = {}, retried = fals
     throw new ApiError(0, 'network', 'We couldn’t reach the store. Check your internet connection and try again.')
   }
   if (res.status === 204) return undefined as T
+  // A 200 answer that isn't JSON means the request never reached the API (e.g. the host served its own HTML page).
+  if (res.ok && !(res.headers.get('content-type') ?? '').includes('json'))
+    throw new ApiError(502, 'bad_response', 'The store server did not answer correctly. Please try again in a moment.')
   const data = await res.json().catch(() => ({}))
   if (!res.ok) {
     const e = data?.error ?? {}

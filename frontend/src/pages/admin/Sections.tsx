@@ -70,7 +70,7 @@ export default function Sections() {
             </div>
             <div className="flex flex-wrap items-center gap-1">
               <button role="switch" aria-checked={!!c.is_active} aria-label={`${c.name} active`} onClick={() => toggle.mutate(c)} disabled={toggle.isPending}
-                className={`relative h-7 w-12 rounded-full transition-colors ${c.is_active ? 'bg-burgundy' : 'bg-taupe/60'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-white transition-all ${c.is_active ? 'left-6' : 'left-1'}`} /></button>
+                className={`relative h-7 w-12 rounded-full transition-colors ${c.is_active ? 'bg-burgundy' : 'bg-taupe/60'}`}><span className={`absolute top-1 h-5 w-5 rounded-full bg-surface transition-all ${c.is_active ? 'left-6' : 'left-1'}`} /></button>
               <button className="btn-ghost px-3" aria-label={`Edit ${c.name}`} onClick={() => setEditing(c)}><Pencil size={16} /></button>
               <button className="btn-ghost px-3" aria-label={`Delete ${c.name}`} title={c.total_products ? 'Sections with products can only be hidden' : 'Delete'} disabled={!!c.total_products} onClick={() => setDel(c)}><Trash2 size={16} /></button>
             </div>

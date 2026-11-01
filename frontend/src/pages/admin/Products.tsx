@@ -79,8 +79,8 @@ function ProductForm({ product, cats, onDone }: { product: Product | null; cats:
           <div className="flex flex-wrap gap-3">
             {current.images.map((im) => (
               <div key={im.id} className="relative w-24 overflow-hidden rounded-brand"><Img src={im.image} alt={im.alt_text || current.name} ratio="aspect-square" />
-                <button type="button" onClick={() => delImg(im.id)} aria-label="Remove image" className="absolute right-1 top-1 rounded-full bg-white/90 p-1.5 text-burgundy"><Trash2 size={14} /></button>
-                <label className="absolute bottom-1 left-1 cursor-pointer rounded-full bg-white/90 p-1.5 text-burgundy" title="Replace image"><RefreshCw size={14} aria-hidden /><span className="sr-only">Replace image</span>
+                <button type="button" onClick={() => delImg(im.id)} aria-label="Remove image" className="absolute right-1 top-1 rounded-full bg-surface/90 p-1.5 text-burgundy"><Trash2 size={14} /></button>
+                <label className="absolute bottom-1 left-1 cursor-pointer rounded-full bg-surface/90 p-1.5 text-burgundy" title="Replace image"><RefreshCw size={14} aria-hidden /><span className="sr-only">Replace image</span>
                   <input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => { replaceImg(im.id, e.target.files?.[0]); e.target.value = '' }} /></label></div>))}
             <label className="flex aspect-square w-24 cursor-pointer flex-col items-center justify-center gap-1 rounded-brand border border-dashed border-taupe text-xs text-muted hover:border-burgundy hover:text-burgundy">
               <Upload size={18} aria-hidden /> Add<input type="file" accept="image/jpeg,image/png,image/webp" className="sr-only" onChange={(e) => { upload(e.target.files?.[0]); e.target.value = '' }} /></label>

@@ -76,7 +76,7 @@ export default function OrderPage() {
         <section className="mt-8 rounded-brand border border-red-200 bg-red-50 p-6" role="alert">
           <h2 className="flex items-center gap-2 text-2xl text-red-900"><XCircle aria-hidden /> Payment Rejected</h2>
           <p className="mt-2 text-sm text-red-900">We couldn’t verify your payment.</p>
-          {o.payment_rejection_reason && <p className="mt-2 rounded-brand bg-white/70 p-3 text-sm"><span className="font-medium">Reason from Ella Cosmetics:</span> {o.payment_rejection_reason}</p>}
+          {o.payment_rejection_reason && <p className="mt-2 rounded-brand bg-surface/70 p-3 text-sm"><span className="font-medium">Reason from Ella Cosmetics:</span> {o.payment_rejection_reason}</p>}
           <p className="mt-3 text-sm text-red-900">Please contact us on WhatsApp so we can help. If you have now paid the correct amount, send the receipt and press “Done” again below.</p>
           {o.whatsapp_support_url && <a className="btn-primary mt-4 w-full sm:w-auto" href={o.whatsapp_support_url} target="_blank" rel="noreferrer"><MessageCircle size={18} aria-hidden /> Contact Ella Cosmetics on WhatsApp</a>}
         </section>
@@ -87,7 +87,7 @@ export default function OrderPage() {
       {needsPayment && (
         <section className="card mt-8 p-6" aria-labelledby="pay">
           <h2 id="pay" className="text-2xl">Pay by bank transfer</h2>
-          <p className="mt-1 text-sm text-muted">Transfer exactly <strong className="text-charcoal">{naira(o.total)}</strong>. Payment is by manual bank transfer and is confirmed only after we verify it.</p>
+          <p className="mt-1 text-sm text-muted">Transfer exactly <strong className="text-ink">{naira(o.total)}</strong>. Payment is by manual bank transfer and is confirmed only after we verify it.</p>
           {bankReady ? (
             <dl className="mt-4 grid gap-3 rounded-brand bg-blush/30 p-4 text-sm sm:grid-cols-3">
               <div><dt className="text-muted">Bank name</dt><dd className="font-medium">{o.bank!.bank_name}</dd></div>

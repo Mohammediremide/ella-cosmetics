@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Link, Navigate, NavLink, Outlet } from 'react-router-dom'
 import { BadgeCheck, Film, LayoutDashboard, Menu, Package, Receipt, Settings, Tags, X } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
+import ThemeToggle from '../../components/ThemeToggle'
 import { Skeleton } from '../../components/ui'
 
 const items = [
@@ -27,16 +28,16 @@ export default function AdminLayout() {
   )
   return (
     <div className="min-h-screen bg-ivory md:flex">
-      <aside className="hidden w-60 shrink-0 border-r border-taupe/20 bg-white p-4 md:block">
+      <aside className="hidden w-60 shrink-0 border-r border-taupe/20 bg-surface p-4 md:block">
         <p className="mb-6 px-3 font-serif text-xl text-burgundy">Ella Admin</p>{nav}
-        <div className="mt-8 border-t border-taupe/20 pt-4 text-sm"><Link className="block px-3 py-2 hover:text-burgundy" to="/">View storefront</Link><button className="px-3 py-2 hover:text-burgundy" onClick={() => logout()}>Sign out</button></div>
+        <div className="mt-8 border-t border-taupe/20 pt-4 text-sm"><Link className="block px-3 py-2 hover:text-burgundy" to="/">View storefront</Link><ThemeToggle withLabel className="w-full !justify-start" /><button className="px-3 py-2 hover:text-burgundy" onClick={() => logout()}>Sign out</button></div>
       </aside>
       <div className="flex-1 min-w-0">
-        <header className="flex h-14 items-center justify-between border-b border-taupe/20 bg-white px-4 md:hidden">
-          <button className="btn-ghost -ml-3 px-3" aria-label="Open admin menu" onClick={() => setOpen(true)}><Menu size={22} /></button><span className="font-serif text-lg text-burgundy">Ella Admin</span><span className="w-10" />
+        <header className="flex h-14 items-center justify-between border-b border-taupe/20 bg-surface px-4 md:hidden">
+          <button className="btn-ghost -ml-3 px-3" aria-label="Open admin menu" onClick={() => setOpen(true)}><Menu size={22} /></button><span className="font-serif text-lg text-burgundy">Ella Admin</span><ThemeToggle className="-mr-3" />
         </header>
         {open && <div className="fixed inset-0 z-50 md:hidden" role="dialog" aria-modal="true" aria-label="Admin menu"><div className="absolute inset-0 bg-charcoal/50" onClick={() => setOpen(false)} />
-          <div className="absolute inset-y-0 left-0 w-72 bg-white p-4"><button className="btn-ghost mb-4 px-3" aria-label="Close menu" onClick={() => setOpen(false)}><X size={22} /></button>{nav}
+          <div className="absolute inset-y-0 left-0 w-72 bg-surface p-4"><button className="btn-ghost mb-4 px-3" aria-label="Close menu" onClick={() => setOpen(false)}><X size={22} /></button>{nav}
             <Link to="/" className="mt-6 block px-3 py-2 text-sm">View storefront</Link></div></div>}
         <main className="mx-auto max-w-6xl p-4 sm:p-8"><Outlet /></main>
       </div>
