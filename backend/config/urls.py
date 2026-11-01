@@ -6,6 +6,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
 from django.http import JsonResponse
 from django.db import connection
 from rest_framework.routers import DefaultRouter
+from accounts import admin_views as acc_admin
 from accounts import views as acc
 from catalog import views as cat
 from core import views as core
@@ -38,6 +39,7 @@ ar.register('products', cat.AdminProductViewSet, basename='admin-product')
 ar.register('categories', cat.AdminCategoryViewSet, basename='admin-category')
 ar.register('orders', ords.AdminOrderViewSet, basename='admin-order')
 ar.register('slides', slides.AdminSlideViewSet, basename='admin-slide')
+ar.register('customers', acc_admin.AdminCustomerViewSet, basename='admin-customer')
 
 urlpatterns = [
     path('django-admin/', admin.site.urls),

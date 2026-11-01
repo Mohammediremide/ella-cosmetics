@@ -1,10 +1,12 @@
 """Privacy-friendly visit counting. No cookies, no IP addresses stored; staff browsing and bots are ignored."""
 import hashlib
 import hmac
+import re
+from urllib.parse import parse_qs
 from datetime import timedelta
 
 from django.conf import settings
-from django.db.models import Count
+from django.db.models import Count, Q
 from django.utils import timezone
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -15,7 +17,37 @@ from .models import PageView
 from .permissions import IsStaffUser
 
 BOT_WORDS = ('bot', 'spider', 'crawl', 'slurp', 'headless', 'preview', 'monitor', 'curl', 'python-requests')
-IGNORED_PREFIXES = ('/admin', '/api', '/login', '/register', '/reset-password', '/forgot-password')
+# Personal pages are never logged (an order reference in a URL would be personal data)
+IGNORED_PREFIXES = ('/admin', '/api', '/login', '/register', '/reset-password', '/forgot-password', '/account', '/orders')
+SLUG = re.compile(r'^[a-z0-9-]{1,80}$')
+
+
+def clean_path(raw):
+    """Drop the #fragment and the query string, EXCEPT a valid ?category=<slug> on /shop (so section pages can be counted).
+    Search words and anything else a visitor typed are never stored."""
+    raw = str(raw)[:300].split('#')[0]
+    path, _, query = raw.partition('?')
+    path = path[:200]
+    if path == '/shop':
+        cat = parse_qs(query).get('category', [''])[0]
+        if SLUG.match(cat):
+            return f'/shop?category={cat}'
+    return path
+
+
+def label_for(path, products, sections):
+    """Human-readable name for the 'Most viewed pages' list."""
+    fixed = {'/': 'Home page', '/shop': 'All products', '/cart': 'Cart', '/checkout': 'Checkout', '/privacy': 'Privacy policy', '/terms': 'Terms of sale'}
+    if path in fixed:
+        return fixed[path]
+    if path.startswith('/shop?category='):
+        slug = path.split('=', 1)[1]
+        return f'Section: {sections.get(slug, slug)}'
+    if path.startswith('/shop/'):
+        slug = path[len('/shop/'):]
+        return f'Product: {products.get(slug, slug)}'
+    return path
+
 
 
 def _visitor(request, day):
@@ -32,7 +64,7 @@ class TrackVisitView(APIView):
     throttle_classes = [ScopedRateThrottle]
 
     def post(self, request):
-        path = str(request.data.get('path', '')).split('?')[0].split('#')[0][:200]
+        path = clean_path(request.data.get('path', ''))
         ua = request.META.get('HTTP_USER_AGENT', '').lower()
         user = request.user
         skip = (not path.startswith('/') or path.startswith(IGNORED_PREFIXES) or not ua
@@ -64,11 +96,20 @@ class AdminAnalyticsView(APIView):
         series = [{'day': (start + timedelta(days=i)).isoformat(),
                    'page_views': by_day.get(start + timedelta(days=i), {}).get('v', 0),
                    'visitors': by_day.get(start + timedelta(days=i), {}).get('u', 0)} for i in range(days)]
-        top = qs.filter(day__gte=start).values('path').annotate(v=Count('id')).order_by('-v')[:8]
+        hidden = Q()
+        for prefix in IGNORED_PREFIXES:  # a lookup takes ONE prefix, so OR them together
+            hidden |= Q(path__startswith=prefix)
+        top_qs = qs.filter(day__gte=start).exclude(hidden).values('path').annotate(v=Count('id')).order_by('-v')[:10]  # also hides older rows logged before these were excluded
+        top = list(top_qs)
+        from catalog.models import Category, Product
+        slugs = [r['path'][len('/shop/'):] for r in top if r['path'].startswith('/shop/') and '?' not in r['path']]
+        cats = [r['path'].split('=', 1)[1] for r in top if r['path'].startswith('/shop?category=')]
+        products = dict(Product.objects.filter(slug__in=slugs).values_list('slug', 'name'))
+        sections = dict(Category.objects.filter(slug__in=cats).values_list('slug', 'name'))
         return Response({
             'today': _totals(qs.filter(day=today)),
             'last_7_days': _totals(qs.filter(day__gte=today - timedelta(days=6))),
             'last_30_days': _totals(qs.filter(day__gte=today - timedelta(days=29))),
             'all_time': _totals(qs),
-            'days': days, 'daily': series, 'top_pages': [{'path': r['path'], 'page_views': r['v']} for r in top],
+            'days': days, 'daily': series, 'top_pages': [{'path': r['path'], 'label': label_for(r['path'], products, sections), 'page_views': r['v']} for r in top],
         })

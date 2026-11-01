@@ -55,10 +55,12 @@ export default function Layout() {
   // Privacy-friendly visit counting (no cookies; the server ignores staff, bots and admin pages)
   useEffect(() => {
     window.scrollTo({ top: 0 })
-    if (last.current === loc.pathname || user?.is_staff) return
-    last.current = loc.pathname
-    api('/analytics/visit/', { method: 'POST', body: { path: loc.pathname } }).catch(() => {})
-  }, [loc.pathname, user?.is_staff])
+    const category = loc.pathname === '/shop' ? new URLSearchParams(loc.search).get('category') : null
+    const path = category ? `/shop?category=${category}` : loc.pathname  // search words are never sent
+    if (last.current === path || user?.is_staff) return
+    last.current = path
+    api('/analytics/visit/', { method: 'POST', body: { path } }).catch(() => {})
+  }, [loc.pathname, loc.search, user?.is_staff])
 
   return (
     <div className="flex min-h-screen flex-col">

@@ -31,7 +31,7 @@ class VisitTrackingTests(TestCase):
         self.assertEqual(s['today'], {'page_views': 4, 'visitors': 2})
         self.assertEqual(s['all_time']['page_views'], 4)
         self.assertEqual(s['daily'][-1]['visitors'], 2)
-        self.assertEqual(s['top_pages'][0], {'path': '/', 'page_views': 2})
+        self.assertEqual(s['top_pages'][0], {'path': '/', 'label': 'Home page', 'page_views': 2})
 
     def test_no_ip_or_cookie_is_stored(self):
         self.visit('/', ip='203.0.113.9')

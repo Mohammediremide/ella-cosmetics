@@ -19,6 +19,7 @@ const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const Overview = lazy(() => import('./pages/admin/Overview'))
 const Products = lazy(() => import('./pages/admin/Products'))
 const Sections = lazy(() => import('./pages/admin/Sections'))
+const Customers = lazy(() => import('./pages/admin/Customers'))
 const Slides = lazy(() => import('./pages/admin/Slides'))
 const Payments = lazy(() => import('./pages/admin/Payments'))
 const Orders = lazy(() => import('./pages/admin/Orders'))
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="categories" element={<Navigate to="/admin/sections" replace />} />
           <Route path="payments" element={<Payments />} />
           <Route path="slides" element={<Slides />} />
+          <Route path="customers" element={<Customers />} />
           <Route path="orders" element={<Orders />} />
           <Route path="settings" element={<StoreSettings />} />
         </Route>

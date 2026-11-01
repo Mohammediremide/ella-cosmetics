@@ -1,13 +1,13 @@
 import { useState } from 'react'
 import { Link, Navigate, NavLink, Outlet } from 'react-router-dom'
-import { BadgeCheck, Film, LayoutDashboard, Menu, Package, Receipt, Settings, Tags, X } from 'lucide-react'
+import { BadgeCheck, Film, LayoutDashboard, Users, Menu, Package, Receipt, Settings, Tags, X } from 'lucide-react'
 import { useAuth } from '../../lib/auth'
 import ThemeToggle from '../../components/ThemeToggle'
 import { Skeleton } from '../../components/ui'
 
 const items = [
   { to: '/admin', label: 'Overview', icon: LayoutDashboard, end: true }, { to: '/admin/payments', label: 'Payment Verification', icon: BadgeCheck },
-  { to: '/admin/orders', label: 'Orders', icon: Receipt }, { to: '/admin/products', label: 'Products', icon: Package },
+  { to: '/admin/orders', label: 'Orders', icon: Receipt }, { to: '/admin/customers', label: 'Customers', icon: Users }, { to: '/admin/products', label: 'Products', icon: Package },
   { to: '/admin/sections', label: 'Manage Sections', icon: Tags }, { to: '/admin/slides', label: 'Homepage Slideshow', icon: Film }, { to: '/admin/settings', label: 'Settings', icon: Settings },
 ]
 

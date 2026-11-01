@@ -42,3 +42,8 @@ def build_support_url(order, cfg):
 def build_customer_url(order, cfg):
     """Admin -> customer chat (customer's own phone number, converted to international format)."""
     return _url(order.customer_phone, f'Hello {order.customer_name}, this is {cfg.store_name} regarding your order {order.reference}.')
+
+
+def build_phone_url(phone, text):
+    """Admin -> any customer by their phone number (converted to international format). '' if the number is unusable."""
+    return _url(phone, text) if len(normalize_wa_number(phone)) >= 10 else ''

@@ -8,7 +8,7 @@ import type { Order } from '../../lib/types'
 
 interface Analytics {
   today: Tot; last_7_days: Tot; last_30_days: Tot; all_time: Tot; days: number
-  daily: { day: string; page_views: number; visitors: number }[]; top_pages: { path: string; page_views: number }[]
+  daily: { day: string; page_views: number; visitors: number }[]; top_pages: { path: string; label: string; page_views: number }[]
 }
 type Tot = { page_views: number; visitors: number }
 
@@ -48,9 +48,10 @@ function Visits() {
         <div className="card p-4">
           <p className="text-sm font-medium">Most viewed pages</p>
           <ul className="mt-3 space-y-2 text-sm">
-            {a?.top_pages.map((p) => <li key={p.path} className="flex justify-between gap-3"><span className="truncate">{p.path}</span><span className="shrink-0 text-muted">{p.page_views}</span></li>)}
+            {a?.top_pages.map((p) => <li key={p.path} className="flex justify-between gap-3"><span className="truncate" title={p.path}>{p.label}</span><span className="shrink-0 text-muted">{p.page_views}</span></li>)}
             {a && !a.top_pages.length && <li className="text-muted">No visits recorded yet.</li>}
           </ul>
+          <p className="mt-3 text-xs text-muted">Your own visits (while signed in as staff) are not counted, so browse the shop in a private window to test.</p>
         </div>
       </div>
     </section>

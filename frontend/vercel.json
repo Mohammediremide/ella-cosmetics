@@ -1,7 +1,7 @@
 {
   "rewrites": [
-    { "source": "/api/(.*)", "destination": "https://ella-cosmetic.onrender.com/api/$1" },
-    { "source": "/media/(.*)", "destination": "https://ella-cosmetic.onrender.com/media/$1" },
+    { "source": "/api/:path*", "destination": "https://YOUR-BACKEND-HOST/api/:path*" },
+    { "source": "/media/:path*", "destination": "https://YOUR-BACKEND-HOST/media/:path*" },
     { "source": "/(.*)", "destination": "/index.html" }
   ]
 }

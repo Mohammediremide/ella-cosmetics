@@ -41,7 +41,9 @@ Payment statuses: Awaiting Payment → Processing — Awaiting Verification → 
 
 **Inventory policy.** Deducted at order creation; cancel or expiry restores exactly once; verify/reject/Done never touch stock. Every change is in the product's stock history. Unpaid (*Awaiting Payment* or *Rejected*) orders expire after the window in Admin → Settings (default 24 h). Orders where the customer pressed Done are **not** auto-expired: an admin must verify or reject them.
 
-**Visits.** Admin → Overview shows visitors (unique per day) and page views for today / 7 / 30 days / all time, a daily chart and top pages. No cookies and no IP addresses are stored (daily-salted hash only); staff, bots and admin pages are excluded.
+**Customers.** Admin → *Customers*: every account with name, email, phone (profile phone, or the number given at their latest checkout), join date, last sign-in, order count and verified spend. Click a customer for their orders (with payment and fulfilment status), delivery addresses used, other phone numbers used, current cart, and WhatsApp / call / email shortcuts. It is read-only, staff-only, and **never** includes passwords (they are stored as one-way hashes and are not even loaded). Treat this data as private and follow your privacy page.
+
+**Visits.** Admin → Overview shows visitors (unique per day) and page views for today / 7 / 30 days / all time, a daily chart and the most viewed pages by readable name (Home page, Section: Makeup, Product: …). Staff visits are not counted, and personal pages (account, orders) and search words are never logged. No cookies and no IP addresses are stored (daily-salted hash only); staff, bots and admin pages are excluded.
 
 **Dark mode.** A sun/moon button in the header (and the mobile menu and admin sidebar) switches between light and dark. First-time visitors get whatever their phone/computer is set to; their choice is remembered on that device. Colours live in `frontend/src/index.css` (`:root` and `:root[data-theme='dark']`).
 
@@ -108,7 +110,7 @@ Never set `COOKIE_SAMESITE=None` to "make it work": it still fails on Safari and
 **Password reset email:** configure `EMAIL_*` (any SMTP provider). Without it, production discards reset emails.
 
 ## 5b. Troubleshooting a deployed site
-- **Banner "We're having trouble reaching the store server" (or products/sections missing):** the storefront cannot reach the API. Open `https://YOUR-STORE-URL/api/health/` — it must show `{"status": "ok"}`. If it shows your website or a blank page instead, check that `frontend/vercel.json` is inside the Vercel *Root Directory* (`frontend`) and that its API rewrite uses `/api/(.*)` as the source and `https://YOUR-RENDER-HOST/api/$1` as the destination, before the SPA fallback. Replace the host with the Render service that says *Deployed*. Push the fix and wait for Vercel to redeploy. If health shows an error from Render, open the Render service logs.
+- **Banner "We're having trouble reaching the store server" (or products/sections missing):** the storefront cannot reach the API. Open `https://YOUR-STORE-URL/api/health/` — it must show `{"status": "ok"}`. If it shows your website or a blank page instead, the Vercel rewrite in `frontend/vercel.json` isn't pointing at the right Render host (use the host of the service that says *Deployed*, no `https://`, both places), or `vercel.json` isn't inside the Vercel *Root Directory* (`frontend`). Fix, push, wait for the Vercel redeploy. If it shows an error from Render, open the Render service logs.
 - **First visit after a quiet period is slow (up to ~1 minute):** Render's free plan sleeps when idle.
 
 ## 6. Known limitations / owner to-do
