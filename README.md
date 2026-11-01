@@ -108,7 +108,7 @@ Never set `COOKIE_SAMESITE=None` to "make it work": it still fails on Safari and
 **Password reset email:** configure `EMAIL_*` (any SMTP provider). Without it, production discards reset emails.
 
 ## 5b. Troubleshooting a deployed site
-- **Banner "We're having trouble reaching the store server" (or products/sections missing):** the storefront cannot reach the API. Open `https://YOUR-STORE-URL/api/health/` — it must show `{"status": "ok"}`. If it shows your website or a blank page instead, the Vercel rewrite in `frontend/vercel.json` isn't pointing at the right Render host (use the host of the service that says *Deployed*, no `https://`, both places), or `vercel.json` isn't inside the Vercel *Root Directory* (`frontend`). Fix, push, wait for the Vercel redeploy. If it shows an error from Render, open the Render service logs.
+- **Banner "We're having trouble reaching the store server" (or products/sections missing):** the storefront cannot reach the API. Open `https://YOUR-STORE-URL/api/health/` — it must show `{"status": "ok"}`. If it shows your website or a blank page instead, check that `frontend/vercel.json` is inside the Vercel *Root Directory* (`frontend`) and that its API rewrite uses `/api/(.*)` as the source and `https://YOUR-RENDER-HOST/api/$1` as the destination, before the SPA fallback. Replace the host with the Render service that says *Deployed*. Push the fix and wait for Vercel to redeploy. If health shows an error from Render, open the Render service logs.
 - **First visit after a quiet period is slow (up to ~1 minute):** Render's free plan sleeps when idle.
 
 ## 6. Known limitations / owner to-do
