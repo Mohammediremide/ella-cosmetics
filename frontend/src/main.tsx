@@ -13,7 +13,8 @@ import '@fontsource/dm-sans/600.css'
 import '@fontsource/dm-serif-display/400.css'  // self-hosted fonts: no third-party requests
 import './index.css'
 
-const qc = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false, retry: 1 } } })
+// ~30 s of patience with back-off: Render's free plan sleeps when idle and takes up to a minute to wake
+const qc = new QueryClient({ defaultOptions: { queries: { staleTime: 30_000, refetchOnWindowFocus: false, retry: 5, retryDelay: (n) => Math.min(1000 * 2 ** n, 10_000) } } })
 
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

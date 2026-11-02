@@ -90,7 +90,7 @@ Order matters: **Neon → Cloudinary → Render → Vercel → back to Render** 
 | Vercel | React storefront | no secrets (only the optional `VITE_API_BASE_URL`) |
 
 **Why the browser must talk to ONE domain.** `*.vercel.app` and `*.onrender.com` are different sites, so a login cookie set by Render is a third-party cookie that Safari/iPhone and (increasingly) Chrome block. Two safe layouts:
-1. **Vercel rewrite (default):** `frontend/vercel.json` proxies `/api` and `/media` to Render, so the browser only sees your store domain. Replace both `YOUR-BACKEND-HOST` values with your Render host (no `https://`).
+1. **Vercel rewrite (default):** `frontend/vercel.json` (create it by copying `frontend/vercel.example.json`; update zips never include it, so your real host is never overwritten) proxies `/api` and `/media` to Render, so the browser only sees your store domain. Replace both `YOUR-BACKEND-HOST` values with your Render host (no `https://`).
 2. **Custom domains (best for production):** `www.yourshop.com` (Vercel) and `api.yourshop.com` (Render) are the *same site*, so cookies work. Then set Vercel env `VITE_API_BASE_URL=https://api.yourshop.com`, and Render env `COOKIE_SAMESITE=Lax` (default).
 Never set `COOKIE_SAMESITE=None` to "make it work": it still fails on Safari and weakens CSRF protection.
 
@@ -111,7 +111,7 @@ Never set `COOKIE_SAMESITE=None` to "make it work": it still fails on Safari and
 
 ## 5b. Troubleshooting a deployed site
 - **Banner "We're having trouble reaching the store server" (or products/sections missing):** the storefront cannot reach the API. Open `https://YOUR-STORE-URL/api/health/` — it must show `{"status": "ok"}`. If it shows your website or a blank page instead, the Vercel rewrite in `frontend/vercel.json` isn't pointing at the right Render host (use the host of the service that says *Deployed*, no `https://`, both places), or `vercel.json` isn't inside the Vercel *Root Directory* (`frontend`). Fix, push, wait for the Vercel redeploy. If it shows an error from Render, open the Render service logs.
-- **First visit after a quiet period is slow (up to ~1 minute):** Render's free plan sleeps when idle.
+- **First visit after a quiet period is slow (up to ~1 minute):** Render's free plan sleeps after ~15 minutes idle. The storefront shows "The store is waking up…" and fixes itself when the server answers. To avoid it, either upgrade the Render service to a paid plan, or have a free uptime monitor (for example UptimeRobot) request `https://YOUR-RENDER-HOST/api/health/` every 5 minutes. One always-awake free service fits within Render's monthly free hours; check Render's current terms.
 
 ## 6. Known limitations / owner to-do
 - Scheduler, Cloudinary, email delivery and the live deployment must be set up with your own accounts; they could not be verified here.

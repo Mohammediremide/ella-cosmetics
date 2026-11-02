@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { ChevronDown, Menu, Search, ShoppingBag, User as UserIcon, X } from 'lucide-react'
 import { api } from '../lib/api'
 import { useAuth } from '../lib/auth'
@@ -38,7 +38,16 @@ function CategoryMenu({ cats }: { cats: Category[] }) {
 }
 
 export default function Layout() {
-  const { data: s, isError: serverDown } = usePublicSettings()
+  const qc = useQueryClient()
+  const settingsQ = usePublicSettings()
+  const s = settingsQ.data
+  // show the notice from the FIRST failed attempt (not after all retries), and hide it the moment the server answers
+  const serverDown = settingsQ.isError || (settingsQ.failureCount > 0 && !settingsQ.data)
+  const wasDown = useRef(false)
+  useEffect(() => {  // server answered again after being down: reload everything that failed in the meantime
+    if (serverDown) { wasDown.current = true; const t = setInterval(() => qc.invalidateQueries({ queryKey: ['settings'] }), 8000); return () => clearInterval(t) }
+    if (wasDown.current) { wasDown.current = false; qc.invalidateQueries() }
+  }, [serverDown, qc])
   const { data: cats = [] } = useCategories()
   const { user, logout } = useAuth()
   const { count } = useCart()
@@ -65,7 +74,7 @@ export default function Layout() {
   return (
     <div className="flex min-h-screen flex-col">
       <a href="#main" className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:bg-surface focus:p-3">Skip to content</a>
-      {serverDown && <div role="alert" className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">We’re having trouble reaching the store server. Please refresh in a minute.</div>}
+      {serverDown && <div role="alert" className="bg-amber-100 px-4 py-2 text-center text-sm text-amber-900">The store is waking up or can’t be reached right now. This can take up to a minute after a quiet period, and the page will update by itself.</div>}
       {s?.announcement && <div className="bg-burgundy px-4 py-2 text-center text-xs tracking-wide text-white">{s.announcement}</div>}
       <header className="sticky top-0 z-40 border-b border-taupe/20 bg-ivory/95 backdrop-blur">
         <div className="container-x flex h-16 items-center justify-between gap-4">
