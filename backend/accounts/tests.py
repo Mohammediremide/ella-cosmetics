@@ -108,3 +108,18 @@ class SessionTests(TestCase):
     def test_password_hash_never_exposed(self):
         c = APIClient(); c.post('/api/auth/login/', {'email': 'ada@example.com', 'password': PW}, format='json')
         self.assertNotIn('pbkdf2', c.get('/api/auth/me/').content.decode())
+
+
+class RegistrationTests(TestCase):
+    def test_registration_requires_and_saves_phone_number(self):
+        client = APIClient()
+        data = {'name': 'Ada Lovelace', 'email': 'ada@example.com', 'password': PW}
+        missing_phone = client.post('/api/auth/register/', data, format='json')
+        self.assertEqual(missing_phone.status_code, 400)
+        self.assertIn('phone', missing_phone.json()['error']['fields'])
+
+        data['phone'] = '+234 801 234 5678'
+        response = client.post('/api/auth/register/', data, format='json')
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(response.json()['phone'], data['phone'])
+        self.assertEqual(User.objects.get(email='ada@example.com').phone, data['phone'])

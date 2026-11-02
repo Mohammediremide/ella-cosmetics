@@ -10,7 +10,12 @@ import { Field } from '../components/ui'
 import { usePublicSettings } from '../components/Layout'
 
 const loginSchema = z.object({ email: z.string().email('Enter a valid email'), password: z.string().min(1, 'Enter your password') })
-const regSchema = z.object({ name: z.string().trim().min(2, 'Enter your name'), email: z.string().email('Enter a valid email'), password: z.string().min(8, 'Use at least 8 characters'), phone: z.string().optional() })
+const regSchema = z.object({
+  name: z.string().trim().min(2, 'Enter your name'),
+  email: z.string().email('Enter a valid email'),
+  password: z.string().min(8, 'Use at least 8 characters'),
+  phone: z.string().trim().min(7, 'Enter a valid phone number').max(20, 'Phone number must be 20 characters or fewer'),
+})
 
 function Password({ id, reg, autoComplete }: { id: string; reg: any; autoComplete: string }) {
   const [show, setShow] = useState(false)
@@ -45,6 +50,7 @@ export default function Auth({ mode }: { mode: 'login' | 'register' }) {
         {generic && <p role="alert" className="rounded-brand bg-red-50 p-3 text-sm text-red-800">{generic}</p>}
         {!isLogin && <Field label="Full name" htmlFor="name" error={(errors.name?.message as string) ?? fieldError(err, 'name')}><input id="name" className="input" autoComplete="name" {...register('name')} /></Field>}
         <Field label="Email" htmlFor="email" error={(errors.email?.message as string) ?? fieldError(err, 'email')}><input id="email" type="email" className="input" autoComplete="email" {...register('email')} /></Field>
+        {!isLogin && <Field label="Phone number" htmlFor="phone" error={(errors.phone?.message as string) ?? fieldError(err, 'phone')}><input id="phone" type="tel" className="input" autoComplete="tel" {...register('phone')} /></Field>}
         <Field label="Password" htmlFor="pw" error={(errors.password?.message as string) ?? fieldError(err, 'password')}><Password id="pw" autoComplete={isLogin ? 'current-password' : 'new-password'} reg={register('password')} /></Field>
         {isLogin && store?.password_reset_enabled && <p className="-mt-2 text-right text-sm"><Link className="text-burgundy underline" to="/forgot-password">Forgot password?</Link></p>}
         <button className="btn-primary w-full" disabled={isSubmitting}>{isSubmitting ? 'Please wait…' : isLogin ? 'Sign in' : 'Create account'}</button>

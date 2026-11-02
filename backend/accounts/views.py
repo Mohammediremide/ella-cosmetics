@@ -28,7 +28,7 @@ class RegisterSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=120)
     email = serializers.EmailField()
     password = serializers.CharField(write_only=True, trim_whitespace=False)
-    phone = serializers.CharField(max_length=20, required=False, allow_blank=True)
+    phone = serializers.CharField(max_length=20, min_length=7)
 
     def validate_email(self, v):
         v = v.lower()
