@@ -1,7 +1,11 @@
-"""Staff-only, read-only view of customer accounts. Everything about a customer EXCEPT credentials:
-the password hash, sessions and tokens are never selected, serialised or returned."""
+"""Staff-only customer management. Password hashes, sessions and tokens are never returned."""
 from django.db.models import Count, F, Max, OuterRef, Q, Subquery, Sum
-from rest_framework import filters, serializers, viewsets
+from django.db import transaction
+from django.db.models.deletion import ProtectedError
+from rest_framework import filters, serializers, status, viewsets
+from rest_framework.decorators import action
+from rest_framework.exceptions import PermissionDenied
+from rest_framework.response import Response
 
 from core.permissions import IsStaffUser
 from orders.models import Cart, Order
@@ -82,6 +86,10 @@ class AdminCustomerDetailSerializer(AdminCustomerSerializer):
         return build_phone_url(self.get_phone(u), f'Hello {u.name}, this is {cfg.store_name}.')
 
 
+class CustomerStatusSerializer(serializers.Serializer):
+    is_active = serializers.BooleanField()
+
+
 class NullsLastOrdering(filters.OrderingFilter):
     """Empty values (no orders, never signed in) always sort LAST. PostgreSQL puts them first on descending sorts, SQLite last."""
     def filter_queryset(self, request, queryset, view):
@@ -109,3 +117,41 @@ class AdminCustomerViewSet(viewsets.ReadOnlyModelViewSet):
 
     def get_serializer_class(self):
         return AdminCustomerDetailSerializer if self.action == 'retrieve' else AdminCustomerSerializer
+
+    def _get_manageable_customer(self):
+        customer = self.get_object()
+        if customer.is_staff:
+            raise PermissionDenied('Staff accounts cannot be managed from Customers.')
+        return customer
+
+    @action(detail=True, methods=['patch'])
+    def status(self, request, pk=None):
+        customer = self._get_manageable_customer()
+        serializer = CustomerStatusSerializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        customer.is_active = serializer.validated_data['is_active']
+        customer.save(update_fields=['is_active'])
+        return Response({'is_active': customer.is_active})
+
+    def destroy(self, request, *args, **kwargs):
+        customer = self._get_manageable_customer()
+        if customer.orders.exists():
+            return Response(
+                {'error': {
+                    'code': 'customer_has_orders',
+                    'message': 'This customer has order history and cannot be deleted. Deactivate the account instead.',
+                }},
+                status=status.HTTP_409_CONFLICT,
+            )
+        try:
+            with transaction.atomic():
+                customer.delete()
+        except ProtectedError:
+            return Response(
+                {'error': {
+                    'code': 'customer_has_orders',
+                    'message': 'This customer has order history and cannot be deleted. Deactivate the account instead.',
+                }},
+                status=status.HTTP_409_CONFLICT,
+            )
+        return Response(status=status.HTTP_204_NO_CONTENT)

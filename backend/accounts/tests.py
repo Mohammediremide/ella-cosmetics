@@ -4,6 +4,7 @@ from django.core.cache import cache
 from django.test import TestCase, override_settings
 from rest_framework.test import APIClient
 from accounts.models import User
+from orders.models import Order
 
 PW = 'Str0ng-pass!x'
 NEW = 'An0ther-Strong#pw'
@@ -123,3 +124,60 @@ class RegistrationTests(TestCase):
         self.assertEqual(response.status_code, 201)
         self.assertEqual(response.json()['phone'], data['phone'])
         self.assertEqual(User.objects.get(email='ada@example.com').phone, data['phone'])
+
+
+class AdminCustomerManagementTests(TestCase):
+    def setUp(self):
+        self.admin = User.objects.create_superuser(email='admin@example.com', password=PW, name='Admin')
+        self.customer = User.objects.create_user(email='customer@example.com', password=PW, name='Customer')
+        self.client = APIClient()
+        self.client.force_authenticate(self.admin)
+        self.url = f'/api/admin/customers/{self.customer.pk}/'
+
+    def test_staff_can_deactivate_and_reactivate_customer(self):
+        response = self.client.patch(self.url + 'status/', {'is_active': False}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.customer.refresh_from_db()
+        self.assertFalse(self.customer.is_active)
+
+        response = self.client.patch(self.url + 'status/', {'is_active': True}, format='json')
+        self.assertEqual(response.status_code, 200)
+        self.customer.refresh_from_db()
+        self.assertTrue(self.customer.is_active)
+
+    def test_staff_can_delete_customer_without_orders(self):
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(User.objects.filter(pk=self.customer.pk).exists())
+
+    def test_customer_with_orders_cannot_be_deleted(self):
+        Order.objects.create(
+            user=self.customer,
+            customer_name=self.customer.name,
+            customer_phone='08012345678',
+            delivery_method=Order.Method.PICKUP,
+            subtotal='100.00',
+            total='100.00',
+        )
+        response = self.client.delete(self.url)
+        self.assertEqual(response.status_code, 409)
+        self.assertEqual(response.json()['error']['code'], 'customer_has_orders')
+        self.assertTrue(User.objects.filter(pk=self.customer.pk).exists())
+
+    def test_staff_accounts_cannot_be_managed_as_customers(self):
+        staff_user = User.objects.create_user(
+            email='staff@example.com',
+            password=PW,
+            name='Staff',
+            is_staff=True,
+        )
+        response = self.client.patch(
+            f'/api/admin/customers/{staff_user.pk}/status/',
+            {'is_active': False},
+            format='json',
+        )
+        self.assertEqual(response.status_code, 403)
+        response = self.client.delete(f'/api/admin/customers/{staff_user.pk}/')
+        self.assertEqual(response.status_code, 403)
+        staff_user.refresh_from_db()
+        self.assertTrue(staff_user.is_active)

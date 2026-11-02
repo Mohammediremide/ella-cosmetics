@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
-import { Mail, MessageCircle, Phone } from 'lucide-react'
-import { api, naira, when } from '../../lib/api'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
+import { Mail, MessageCircle, Phone, UserRoundX, UserRoundCheck, Trash2 } from 'lucide-react'
+import { api, ApiError, naira, when } from '../../lib/api'
 import { StatusBadge, Empty, ErrorState, Pager, Skeleton } from '../../components/ui'
 import type { Page } from '../../lib/types'
 
@@ -18,7 +18,42 @@ interface CustomerDetail extends CustomerRow {
 const Row = ({ k, children }: { k: string; children: React.ReactNode }) => <div className="flex flex-wrap justify-between gap-x-4 py-1.5 text-sm"><dt className="text-muted">{k}</dt><dd className="text-right font-medium">{children}</dd></div>
 
 function Detail({ id, onClose }: { id: number; onClose: () => void }) {
+  const queryClient = useQueryClient()
   const { data: c, isLoading, isError } = useQuery({ queryKey: ['admin', 'customer', id], queryFn: () => api<CustomerDetail>(`/admin/customers/${id}/`) })
+  const [actionError, setActionError] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  const setActive = async () => {
+    if (!c || c.role === 'staff') return
+    setSaving(true)
+    setActionError('')
+    try {
+      await api(`/admin/customers/${id}/status/`, { method: 'PATCH', body: { is_active: !c.is_active } })
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'customer', id] })
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'customers'] })
+    } catch (error) {
+      setActionError(error instanceof ApiError ? error.message : 'Could not update this account. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const deleteCustomer = async () => {
+    if (!c || c.role === 'staff' || c.order_count > 0) return
+    if (!window.confirm(`Permanently delete ${c.name}'s account? This cannot be undone.`)) return
+    setSaving(true)
+    setActionError('')
+    try {
+      await api(`/admin/customers/${id}/`, { method: 'DELETE' })
+      await queryClient.invalidateQueries({ queryKey: ['admin', 'customers'] })
+      onClose()
+    } catch (error) {
+      setActionError(error instanceof ApiError ? error.message : 'Could not delete this account. Please try again.')
+    } finally {
+      setSaving(false)
+    }
+  }
+
   return (
     <div className="fixed inset-0 z-40 flex justify-end bg-charcoal/40" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
       <aside role="dialog" aria-modal="true" aria-label="Customer details" className="h-full w-full max-w-lg overflow-y-auto bg-ivory p-6">
@@ -31,6 +66,20 @@ function Detail({ id, onClose }: { id: number; onClose: () => void }) {
               {c.phone && <a className="btn-outline" href={`tel:${c.phone}`}><Phone size={16} aria-hidden /> Call</a>}
               <a className="btn-outline" href={`mailto:${c.email}`}><Mail size={16} aria-hidden /> Email</a>
             </div>
+            {c.role === 'customer' && <section className="card mt-4 p-4">
+              <h3 className="font-sans text-sm font-semibold">Account actions</h3>
+              {actionError && <p role="alert" className="mt-2 text-sm text-red-700">{actionError}</p>}
+              <div className="mt-3 flex flex-wrap gap-2">
+                <button className="btn-outline" disabled={saving} onClick={setActive}>
+                  {c.is_active ? <UserRoundX size={16} aria-hidden /> : <UserRoundCheck size={16} aria-hidden />}
+                  {c.is_active ? 'Deactivate account' : 'Reactivate account'}
+                </button>
+                <button className="btn-outline text-red-700" disabled={saving || c.order_count > 0} onClick={deleteCustomer}>
+                  <Trash2 size={16} aria-hidden /> Delete account
+                </button>
+              </div>
+              {c.order_count > 0 && <p className="mt-2 text-xs text-muted">Accounts with order history can’t be deleted, to preserve payment and fulfilment records. Deactivate the account instead.</p>}
+            </section>}
             <section className="card mt-5 p-4"><h3 className="font-sans text-sm font-semibold">Account</h3>
               <dl className="mt-1 divide-y divide-taupe/15">
                 <Row k="Email"><span className="break-all">{c.email}</span></Row><Row k="Phone">{c.phone || '—'}</Row>
