@@ -135,6 +135,19 @@ def cancel_order(order_id, *, by, note='', only_if_expired=None):
         return order
 
 
+def delete_order(order_id, *, by):
+    """Delete an unpaid order after releasing its reserved stock."""
+    with transaction.atomic():
+        order = Order.objects.select_for_update().get(pk=order_id)
+        if order.payment_status == Order.Payment.VERIFIED:
+            _fail('cannot_delete_verified', 'Orders with verified payments cannot be deleted.')
+        if order.fulfilment_status in (F.DISPATCHED, F.DELIVERED):
+            _fail('cannot_delete_fulfilled', 'Dispatched or delivered orders cannot be deleted.')
+        if order.fulfilment_status != F.CANCELLED:
+            cancel_order(order.pk, by=by, note=f'Deleted order {order.reference}')
+        order.delete()
+
+
 def submit_payment(order_id, *, by):
     """Customer pressed "Done — I've Sent the Receipt". Records the CLAIM only: it never marks the order paid and
     never touches stock. Idempotent: repeated presses change nothing and add no audit rows."""

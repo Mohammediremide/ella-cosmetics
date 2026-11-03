@@ -1,19 +1,31 @@
 import { useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
-import { api, naira, when } from '../../lib/api'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { Trash2 } from 'lucide-react'
+import { api, ApiError, naira, when } from '../../lib/api'
+import { useToast } from '../../lib/toast'
 import type { Order, Page } from '../../lib/types'
 import { Action, actionsFor, ConfirmAction } from '../../components/OrderActions'
-import { Empty, Pager, Skeleton, StatusBadge } from '../../components/ui'
+import { Empty, Modal, Pager, Skeleton, StatusBadge } from '../../components/ui'
 
 export default function Orders() {
+  const qc = useQueryClient(), toast = useToast()
   const [sp] = useSearchParams()
   const [search, setSearch] = useState(sp.get('search') ?? ''), [pay, setPay] = useState(''), [ful, setFul] = useState(''), [page, setPage] = useState(1)
   const [sel, setSel] = useState<Order | null>(null)
   const [pending, setPending] = useState<Action | null>(null)
+  const [del, setDel] = useState<Order | null>(null)
   const qs = new URLSearchParams({ search, page: String(page), ...(pay && { payment_status: pay }), ...(ful && { fulfilment_status: ful }) })
   const { data, isLoading } = useQuery({ queryKey: ['admin', 'orders', qs.toString()], queryFn: () => api<Page<Order>>(`/admin/orders/?${qs}`) })
   const actions = actionsFor
+  const remove = useMutation({
+    mutationFn: (o: Order) => api(`/admin/orders/${o.id}/`, { method: 'DELETE' }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ['admin'] }); qc.invalidateQueries({ queryKey: ['products'] }); qc.invalidateQueries({ queryKey: ['orders'] })
+      toast(`Order ${del?.reference} deleted`); setDel(null); setSel(null)
+    },
+    onError: (e) => toast(e instanceof ApiError ? e.message : 'Order could not be deleted', 'error'),
+  })
 
   return (
     <div>
@@ -54,12 +66,22 @@ export default function Orders() {
               <div className="mt-2 flex justify-between border-t border-taupe/20 pt-2"><span>Delivery</span><span>{naira(sel.delivery_fee)}</span></div>
               <div className="flex justify-between text-base font-medium"><span>Total</span><span>{naira(sel.total)}</span></div></section>
             <div className="mt-5 flex flex-wrap gap-2">{actions(sel).map((a) => <button key={a.kind + a.status} className={a.danger ? 'btn-outline' : 'btn-primary'} onClick={() => setPending(a)}>{a.label}</button>)}</div>
+            {sel.payment_status !== 'verified' && !['dispatched', 'delivered'].includes(sel.fulfilment_status) && (
+              <button className="btn-outline mt-5 border-red-300 text-red-700" onClick={() => setDel(sel)}><Trash2 size={16} aria-hidden /> Delete order</button>
+            )}
             {!!sel.audit?.length && <section className="mt-6"><p className="mb-2 text-xs uppercase tracking-wider text-muted">History</p>
               <ul className="space-y-1 text-xs text-ink/80">{sel.audit.map((h, i) => <li key={i}>{new Date(h.at).toLocaleString('en-NG')} — {h.field}: {h.from} → <strong>{h.to}</strong> by {h.by}</li>)}</ul></section>}
           </aside>
         </div>
       )}
       <ConfirmAction order={sel} action={pending} onClose={() => setPending(null)} onDone={(o) => { setSel(o); setPending(null) }} />
+      <Modal open={!!del} title="Delete order permanently?" onClose={() => !remove.isPending && setDel(null)}>
+        <p className="text-sm">This permanently deletes order {del?.reference} and its history. Any reserved items will be returned to stock. Paid, dispatched, or delivered orders cannot be deleted.</p>
+        <div className="mt-5 flex justify-end gap-3">
+          <button className="btn-ghost" disabled={remove.isPending} onClick={() => setDel(null)}>Cancel</button>
+          <button className="btn-primary bg-red-700" disabled={remove.isPending} onClick={() => del && remove.mutate(del)}>{remove.isPending ? 'Deleting…' : 'Delete order'}</button>
+        </div>
+      </Modal>
     </div>
   )
 }

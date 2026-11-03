@@ -195,6 +195,23 @@ class OrderIsolationAndAdminTests(TestCase):
             self.admin_c.post(f'/api/admin/orders/{self.order.pk}/fulfilment/', {'status': 'cancelled'}, format='json')
         self.p.refresh_from_db(); self.assertEqual(self.p.stock_quantity, 10)
 
+    def test_admin_can_delete_unpaid_order_and_restore_stock(self):
+        self.p.refresh_from_db(); self.assertEqual(self.p.stock_quantity, 8)
+        response = self.admin_c.delete(f'/api/admin/orders/{self.order.pk}/')
+        self.assertEqual(response.status_code, 204)
+        self.assertFalse(Order.objects.filter(pk=self.order.pk).exists())
+        self.p.refresh_from_db(); self.assertEqual(self.p.stock_quantity, 10)
+        movement = self.p.movements.get(kind='released')
+        self.assertEqual((movement.delta, movement.order, movement.reason), (2, None, f'Deleted order {self.order.reference}'))
+
+    def test_order_delete_is_staff_only_and_protects_paid_orders(self):
+        url = f'/api/admin/orders/{self.order.pk}/'
+        self.assertEqual(self.alice_c.delete(url).status_code, 403)
+        services.set_payment_status(self.order.pk, 'verified', by=self.admin)
+        response = self.admin_c.delete(url)
+        self.assertEqual(response.status_code, 400)
+        self.assertTrue(Order.objects.filter(pk=self.order.pk).exists())
+
     def test_expired_orders_release_stock(self):
         from datetime import timedelta
         from django.utils import timezone

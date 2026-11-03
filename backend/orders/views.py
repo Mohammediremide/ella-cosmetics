@@ -1,6 +1,6 @@
 from django.db import transaction
 from django.db.models import Count, Q, Sum
-from rest_framework import generics, status, viewsets
+from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
@@ -132,7 +132,7 @@ class CheckoutView(APIView):
 
 
 # ---------- Admin ----------
-class AdminOrderViewSet(viewsets.ReadOnlyModelViewSet):
+class AdminOrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     permission_classes = [IsStaffUser]
     serializer_class = AdminOrderSerializer
     filterset_fields = ['payment_status', 'fulfilment_status']
@@ -147,6 +147,9 @@ class AdminOrderViewSet(viewsets.ReadOnlyModelViewSet):
     def _respond(self, order):
         order = self.get_queryset().get(pk=order.pk)
         return Response(self.get_serializer(order).data)
+
+    def perform_destroy(self, instance):
+        services.delete_order(instance.pk, by=self.request.user)
 
     @action(detail=True, methods=['post'], url_path='payment')
     def payment(self, request, pk=None):
