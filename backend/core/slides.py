@@ -13,7 +13,6 @@ from .permissions import IsStaffUser
 
 log = logging.getLogger(__name__)
 MAX_VIDEO_BYTES = 30 * 1024 * 1024
-MAX_SLIDES = 10
 
 
 def safe_delete(fieldfile):
@@ -77,8 +76,6 @@ class AdminSlideSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError({'video': ['Choose either a video or an image for a slide, not both.']})
         if not self.instance and not (new_video or new_image):
             raise serializers.ValidationError({'video': ['Upload a video or an image for this slide.']})
-        if not self.instance and HeroSlide.objects.count() >= MAX_SLIDES:
-            raise serializers.ValidationError({'video': [f'You can have up to {MAX_SLIDES} slides. Delete one first.']})
         if (data.get('button_label') or '').strip() and not (data.get('link_url', getattr(self.instance, 'link_url', '')) or '').strip():
             raise serializers.ValidationError({'link_url': ['Add a link for the button, or clear the button text.']})
         return data

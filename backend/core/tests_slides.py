@@ -81,9 +81,10 @@ class SlideTests(TestCase):
         self.assertEqual(self.c.delete(f'/api/admin/slides/{sid}/').status_code, 204)
         self.assertFalse(os.path.exists(path))
 
-    def test_limit_of_ten_slides(self):
-        for i in range(10): self.assertEqual(self.add(title=str(i)).status_code, 201)
-        self.assertEqual(self.add().status_code, 400)
+    def test_can_add_more_than_ten_slides(self):
+        for i in range(12):
+            self.assertEqual(self.add(title=str(i)).status_code, 201)
+        self.assertEqual(HeroSlide.objects.count(), 12)
 
     def test_only_staff_can_manage(self):
         sid = self.add().json()['id']

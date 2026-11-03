@@ -87,7 +87,7 @@ export default function Slides() {
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div><h1 className="text-4xl">Homepage Slideshow</h1><p className="mt-1 max-w-xl text-sm text-muted">Upload videos or photos that play as a slideshow at the top of your homepage. Each video plays once, then the next slide starts. With no slides, the homepage shows the default Ella Cosmetics banner.</p></div>
-        <button className="btn-primary" onClick={() => setEditing('new')} disabled={data.length >= 10}><Plus size={18} aria-hidden /> Add slide</button>
+        <button className="btn-primary" onClick={() => setEditing('new')}><Plus size={18} aria-hidden /> Add slide</button>
       </div>
       <ul className="mt-6 space-y-3">
         {isLoading ? <Skeleton className="h-32" /> : data.map((s, i) => (
