@@ -39,8 +39,8 @@ class Category(models.Model):
 
 class ProductQuerySet(models.QuerySet):
     def sellable(self):
-        """Visible AND purchasable: active product whose section (if any) is active. Used by listings, detail, cart and checkout."""
-        return self.filter(is_active=True).filter(Q(category__isnull=True) | Q(category__is_active=True))
+        """Active, non-upcoming products in active sections; used by listings, detail, cart and checkout."""
+        return self.filter(is_active=True, is_upcoming=False).filter(Q(category__isnull=True) | Q(category__is_active=True))
 
 
 class Product(models.Model):
@@ -55,6 +55,7 @@ class Product(models.Model):
     low_stock_threshold = models.PositiveIntegerField(null=True, blank=True, help_text='Blank = store default')
     is_featured = models.BooleanField(default=False)
     is_new_arrival = models.BooleanField(default=False, help_text='Force NEW badge regardless of age')
+    is_upcoming = models.BooleanField(default=False, help_text='Show in Coming Soon without allowing purchases')
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

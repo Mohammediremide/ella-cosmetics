@@ -53,6 +53,7 @@ urlpatterns = [
     path('api/auth/password-reset/confirm/', acc.PasswordResetConfirmView.as_view()),
     path('api/products/', cat.ProductListView.as_view()),
     path('api/products/<slug:slug>/', cat.ProductDetailView.as_view()),
+    path('api/upcoming-products/', cat.UpcomingProductListView.as_view()),
     path('api/categories/', cat.CategoryListView.as_view()),
     path('api/settings/', core.PublicSettingsView.as_view()),
     path('api/slides/', slides.SlideListView.as_view()),

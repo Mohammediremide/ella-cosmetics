@@ -51,6 +51,8 @@ Payment statuses: Awaiting Payment → Processing — Awaiting Verification → 
 
 **Product images.** No stock photography is bundled. Products and sections without a photo show a branded placeholder. **Upload real photos in Admin → Products (edit a product → Images)** and section covers in **Admin → Manage Sections**. "Featured" on the product form only controls the Featured row on the homepage.
 
+**Upcoming products.** In Admin → Products, create or edit a product, upload its photos, and enable **Upcoming (Coming Soon; not purchasable)**. Active upcoming products appear in the homepage **Coming Soon** section and are excluded from the shop, product detail, cart, and checkout until the flag is turned off.
+
 ## 3. Environment variables
 
 Backend (`backend/.env.example` lists them all with comments):

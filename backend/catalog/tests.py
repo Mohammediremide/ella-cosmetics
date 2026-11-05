@@ -109,6 +109,31 @@ class SectionTests(TestCase):
         self.assertEqual(pub.get('/api/products/?category=makeup').json()['count'], 0)
         self.assertEqual(pub.get('/api/products/?category=fragrance').json()['count'], 1)
 
+    def test_upcoming_products_are_publicly_visible_but_not_sellable(self):
+        mk = Category.objects.get(name='Makeup')
+        product = self.add_product(mk.id, 'Coming Lip Tint', stock=8)
+        r = self.c.patch(f"/api/admin/products/{product['id']}/", {'is_upcoming': True}, format='json')
+        self.assertEqual(r.status_code, 200, r.content)
+        self.assertTrue(r.json()['is_upcoming'])
+
+        public = APIClient()
+        upcoming = public.get('/api/upcoming-products/')
+        self.assertEqual(upcoming.status_code, 200)
+        self.assertEqual([p['name'] for p in upcoming.json()], ['Coming Lip Tint'])
+        self.assertEqual(public.get('/api/products/').json()['count'], 0)
+        self.assertEqual(public.get(f"/api/products/{product['slug']}/").status_code, 404)
+
+        customer_client = APIClient(); customer_client.force_login(customer())
+        self.assertEqual(
+            customer_client.put('/api/cart/', {'items': [{'product_id': product['id'], 'quantity': 1}]}, format='json').status_code,
+            200,
+        )
+        self.assertEqual(customer_client.get('/api/cart/').json()['items'], [])
+
+        self.c.patch(f"/api/admin/products/{product['id']}/", {'is_upcoming': False}, format='json')
+        self.assertEqual(public.get('/api/upcoming-products/').json(), [])
+        self.assertEqual(public.get('/api/products/').json()['count'], 1)
+
     def test_product_must_have_a_valid_active_section(self):
         base = {'name': 'X', 'price': '10', 'stock_quantity': 1}
         self.assertEqual(self.c.post('/api/admin/products/', base, format='json').status_code, 400)  # none chosen

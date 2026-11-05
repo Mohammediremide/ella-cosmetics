@@ -7,7 +7,7 @@ export interface Product {
   id: number; name: string; slug: string; description: string; price: string; category: Category | null
   images: ProductImage[]; stock_quantity: number; stock_status: 'in_stock' | 'low_stock' | 'out_of_stock'
   is_new: boolean; is_featured: boolean; created_at: string
-  is_active?: boolean; is_new_arrival?: boolean; low_stock_threshold?: number | null
+  is_active?: boolean; is_new_arrival?: boolean; is_upcoming?: boolean; low_stock_threshold?: number | null
 }
 export interface Page<T> { count: number; next: string | null; previous: string | null; results: T[] }
 export interface User { id: number; name: string; email: string; phone: string; is_staff: boolean }

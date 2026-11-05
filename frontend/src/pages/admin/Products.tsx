@@ -15,7 +15,7 @@ const schema = z.object({
   price: z.coerce.number({ invalid_type_error: 'Enter a price' }).min(0, 'Price cannot be negative'),
   stock_quantity: z.coerce.number().int('Whole numbers only').min(0, 'Stock cannot be negative'),
   low_stock_threshold: z.union([z.literal(''), z.coerce.number().int().min(0)]).optional(),
-  category_id: z.string().min(1, 'Choose a section for this product'), is_featured: z.boolean(), is_new_arrival: z.boolean(), is_active: z.boolean(),
+  category_id: z.string().min(1, 'Choose a section for this product'), is_featured: z.boolean(), is_new_arrival: z.boolean(), is_upcoming: z.boolean(), is_active: z.boolean(),
 })
 type F = z.infer<typeof schema>
 
@@ -26,7 +26,7 @@ function ProductForm({ product, cats, onDone }: { product: Product | null; cats:
   const { register, handleSubmit, formState: { errors, isSubmitting } } = useForm<F>({
     resolver: zodResolver(schema) as any,
     defaultValues: { name: product?.name ?? '', description: product?.description ?? '', price: product ? Number(product.price) : ('' as any), stock_quantity: product?.stock_quantity ?? 0,
-      low_stock_threshold: (product?.low_stock_threshold ?? '') as any, category_id: product?.category ? String(product.category.id) : '', is_featured: product?.is_featured ?? false, is_new_arrival: product?.is_new_arrival ?? false, is_active: product?.is_active ?? true },
+      low_stock_threshold: (product?.low_stock_threshold ?? '') as any, category_id: product?.category ? String(product.category.id) : '', is_featured: product?.is_featured ?? false, is_new_arrival: product?.is_new_arrival ?? false, is_upcoming: product?.is_upcoming ?? false, is_active: product?.is_active ?? true },
   })
   const sections = cats.filter((c) => c.is_active || c.id === product?.category?.id)  // inactive sections can't receive products
   const refresh = () => qc.invalidateQueries({ queryKey: ['admin'] })
@@ -70,7 +70,7 @@ function ProductForm({ product, cats, onDone }: { product: Product | null; cats:
         <Field label="Low-stock threshold (blank = store default)" htmlFor="pt"><input id="pt" inputMode="numeric" className="input" {...register('low_stock_threshold')} /></Field>
       </div>
       <div className="flex flex-wrap gap-5 text-sm">
-        {([['is_active', 'Active (visible in store)'], ['is_featured', 'Featured'], ['is_new_arrival', 'Always show NEW badge']] as const).map(([k, l]) => <label key={k} className="flex min-h-[44px] items-center gap-2"><input type="checkbox" className="h-4 w-4 accent-burgundy" {...register(k)} /> {l}</label>)}
+        {([['is_active', 'Active (visible in store)'], ['is_featured', 'Featured'], ['is_new_arrival', 'Always show NEW badge'], ['is_upcoming', 'Upcoming (Coming Soon; not purchasable)']] as const).map(([k, l]) => <label key={k} className="flex min-h-[44px] items-center gap-2"><input type="checkbox" className="h-4 w-4 accent-burgundy" {...register(k)} /> {l}</label>)}
       </div>
 
       <div>
@@ -141,7 +141,7 @@ export default function Products() {
             <thead className="border-b border-taupe/20 text-xs uppercase tracking-wider text-muted"><tr><th className="p-3">Product</th><th>Section</th><th>Price</th><th>Stock</th><th>Status</th><th className="pr-3 text-right">Actions</th></tr></thead>
             <tbody className="divide-y divide-taupe/15">{data.results.map((p) => (
               <tr key={p.id} className={p.is_active ? '' : 'opacity-50'}>
-                <td className="flex items-center gap-3 p-3"><div className="w-10 overflow-hidden rounded-lg"><Img src={p.images[0]?.image} alt="" ratio="aspect-square" /></div><span className="font-medium">{p.name}{!p.is_active && ' (archived)'}</span></td>
+                <td className="flex items-center gap-3 p-3"><div className="w-10 overflow-hidden rounded-lg"><Img src={p.images[0]?.image} alt="" ratio="aspect-square" /></div><span className="font-medium">{p.name}{p.is_upcoming && ' (upcoming)'}{!p.is_active && ' (archived)'}</span></td>
                 <td>{p.category ? <>{p.category.name}{p.category.is_active === false && <span className="ml-1 text-xs text-muted">(inactive)</span>}</> : <span className="text-muted">—</span>}</td><td>{naira(p.price)}</td><td>{p.stock_quantity}</td><td><StockBadge status={p.stock_status} /></td>
                 <td className="pr-3 text-right"><button className="btn-ghost px-3" aria-label={`Stock history for ${p.name}`} onClick={() => setStockFor(p)}><History size={16} /></button><button className="btn-ghost px-3" aria-label={`Edit ${p.name}`} onClick={() => setEditing(p)}><Pencil size={16} /></button>
                   {p.is_active && <button className="btn-ghost px-3" aria-label={`Archive ${p.name}`} onClick={() => setConfirm(p)}><Trash2 size={16} /></button>}</td></tr>))}</tbody>

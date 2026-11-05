@@ -6,7 +6,7 @@ import type { Category, Page, Product } from '../lib/types'
 import ProductCard from '../components/ProductCard'
 import { useCategories } from '../components/Layout'
 import HeroSlideshow from '../components/HeroSlideshow'
-import { Skeleton } from '../components/ui'
+import { ErrorState, Img, Skeleton } from '../components/ui'
 import type { Slide } from '../lib/types'
 
 const useProducts = (q: string) => useQuery({ queryKey: ['products', 'home', q], queryFn: () => api<Page<Product>>(`/products/?${q}`) })
@@ -44,6 +44,11 @@ function SectionCard({ c, i }: { c: Category; i: number }) {
 export default function Home() {
   const { data: cats = [], isLoading: catsLoading } = useCategories()
   const { data: slides = [], isLoading: slidesLoading } = useQuery({ queryKey: ['slides'], staleTime: 60_000, queryFn: () => api<Slide[]>('/slides/') })
+  const { data: upcoming = [], isLoading: upcomingLoading, isError: upcomingError, refetch: refetchUpcoming } = useQuery({
+    queryKey: ['upcoming-products'],
+    staleTime: 60_000,
+    queryFn: () => api<Product[]>('/upcoming-products/'),
+  })
   return (
     <>
       {slidesLoading ? <div className="container-x pt-10"><Skeleton className="aspect-[4/5] sm:aspect-[16/9] lg:aspect-[21/9]" /></div>
@@ -72,6 +77,29 @@ export default function Home() {
 
       <Row title="Featured" to="/shop?featured=true" q="featured=true" />
       <Row title="New arrivals" to="/shop?new=true" q="new=true" />
+
+      {upcomingLoading ? (
+        <section className="container-x mt-20"><Skeleton className="h-8 w-48" /><div className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">{Array.from({ length: 4 }, (_, i) => <Skeleton key={i} className="aspect-[4/5]" />)}</div></section>
+      ) : upcomingError ? (
+        <section className="container-x mt-20"><ErrorState message="We couldn’t load upcoming products." onRetry={() => { void refetchUpcoming() }} /></section>
+      ) : upcoming.length > 0 && (
+        <section className="container-x mt-20" aria-labelledby="upcoming-title">
+          <div className="mb-8"><h2 id="upcoming-title" className="text-3xl md:text-4xl">Coming Soon</h2><p className="mt-2 text-sm text-muted">A first look at products arriving soon.</p></div>
+          <div className="grid grid-cols-2 gap-x-4 gap-y-8 lg:grid-cols-4">
+            {upcoming.map((p) => (
+              <article key={p.id} className="group">
+                <div className="relative overflow-hidden rounded-brand bg-blush/40">
+                  <Img src={p.images[0]?.image} alt={p.images[0]?.alt_text || p.name} />
+                  <span className="absolute left-3 top-3 rounded-full bg-burgundy px-2.5 py-0.5 text-[11px] font-semibold tracking-wider text-white">COMING SOON</span>
+                </div>
+                {p.category && <p className="mt-3 text-xs uppercase tracking-wider text-muted">{p.category.name}</p>}
+                <h3 className="mt-0.5 font-sans text-base font-medium leading-snug">{p.name}</h3>
+                {p.description && <p className="mt-1 line-clamp-3 text-sm text-muted">{p.description}</p>}
+              </article>
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="container-x mt-24 text-center">
         <p className="mx-auto max-w-3xl font-serif text-3xl leading-snug text-burgundy md:text-4xl">“Beauty essentials for every day, every mood, and every version of you.”</p>

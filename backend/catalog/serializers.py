@@ -112,7 +112,7 @@ class ProductSerializer(serializers.ModelSerializer):
     class Meta:
         model = Product
         fields = ['id', 'name', 'slug', 'description', 'price', 'category', 'images', 'stock_quantity',
-                  'stock_status', 'is_new', 'is_featured', 'created_at']
+                  'stock_status', 'is_new', 'is_featured', 'is_upcoming', 'created_at']
 
     def _cfg(self):
         if 'cfg' not in self.context:

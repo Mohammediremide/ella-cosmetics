@@ -55,12 +55,23 @@ class ProductDetailView(generics.RetrieveAPIView):
     queryset = Product.objects.sellable().select_related('category').prefetch_related('images')
 
 
+class UpcomingProductListView(generics.ListAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = ProductSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        return Product.objects.filter(is_active=True, is_upcoming=True).filter(
+            Q(category__isnull=True) | Q(category__is_active=True)
+        ).select_related('category').prefetch_related('images')
+
+
 class CategoryListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     serializer_class = CategorySerializer
     pagination_class = None
     def get_queryset(self):
-        live = Q(products__is_active=True)
+        live = Q(products__is_active=True, products__is_upcoming=False)
         return Category.objects.filter(is_active=True).annotate(live_count=Count('products', filter=live, distinct=True)).order_by('sort_order', 'name')  # Meta.ordering is ignored on aggregated queries
 
 
