@@ -41,6 +41,18 @@ class SlideTests(TestCase):
         self.assertTrue(pub[0]['video'].startswith('/media/slides/videos/'))
         self.assertNotIn('is_active', pub[0]); self.assertNotIn('sort_order', pub[0])
 
+    def test_newest_slide_is_first_in_admin_and_public_order(self):
+        self.add(title='Earlier')
+        self.add(title='Latest')
+        self.assertEqual(
+            [slide['title'] for slide in self.c.get('/api/admin/slides/').json()],
+            ['Latest', 'Earlier'],
+        )
+        self.assertEqual(
+            [slide['title'] for slide in APIClient().get('/api/slides/').json()],
+            ['Latest', 'Earlier'],
+        )
+
     def test_webm_and_image_slides_accepted(self):
         self.assertEqual(self.add(video(WEBM, 'a.webm')).status_code, 201)
         r = self.c.post('/api/admin/slides/', {'image': png()}, format='multipart')
@@ -62,11 +74,12 @@ class SlideTests(TestCase):
 
     def test_only_active_slides_in_order_and_reorder(self):
         ids = [self.add(title=t).json()['id'] for t in ('one', 'two', 'three')]
+        self.assertEqual([s['title'] for s in APIClient().get('/api/slides/').json()], ['three', 'two', 'one'])
         self.c.patch(f'/api/admin/slides/{ids[1]}/', {'is_active': False}, format='json')
-        self.assertEqual([s['title'] for s in APIClient().get('/api/slides/').json()], ['one', 'three'])
-        r = self.c.post('/api/admin/slides/reorder/', {'ids': [ids[2], ids[1], ids[0]]}, format='json')
-        self.assertEqual(r.status_code, 200)
         self.assertEqual([s['title'] for s in APIClient().get('/api/slides/').json()], ['three', 'one'])
+        r = self.c.post('/api/admin/slides/reorder/', {'ids': [ids[0], ids[1], ids[2]]}, format='json')
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual([s['title'] for s in APIClient().get('/api/slides/').json()], ['one', 'three'])
         for bad in ([ids[0]], [ids[0]] * 3, 'x'):
             self.assertEqual(self.c.post('/api/admin/slides/reorder/', {'ids': bad}, format='json').status_code, 400)
 

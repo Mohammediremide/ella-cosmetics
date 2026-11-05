@@ -1,6 +1,6 @@
 import logging
 from django.db import transaction
-from django.db.models import Max
+from django.db.models import F
 from rest_framework import generics, serializers, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
@@ -114,8 +114,9 @@ class AdminSlideViewSet(viewsets.ModelViewSet):
     queryset = HeroSlide.objects.all()
 
     def perform_create(self, serializer):
-        top = HeroSlide.objects.aggregate(m=Max('sort_order'))['m']
-        serializer.save(sort_order=0 if top is None else top + 1)
+        with transaction.atomic():
+            HeroSlide.objects.update(sort_order=F('sort_order') + 1)
+            serializer.save(sort_order=0)
 
     def perform_destroy(self, instance):
         if instance.video:
