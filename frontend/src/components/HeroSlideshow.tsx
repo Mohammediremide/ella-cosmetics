@@ -9,7 +9,7 @@ const prefersReducedMotion = () => typeof window !== 'undefined' && !!window.mat
 
 /** Homepage slideshow of admin-uploaded videos/images. Videos are muted (required for autoplay), play once each, then advance. */
 export default function HeroSlideshow({ slides }: { slides: Slide[] }) {
-  const [i, setI] = useState(0)
+  const [i, setI] = useState(() => Math.max(0, slides.length - 1))
   const [paused, setPaused] = useState(prefersReducedMotion())  // WCAG: motion must be stoppable; off by default for reduced-motion users
   const videoRef = useRef<HTMLVideoElement>(null)
   const n = slides.length
