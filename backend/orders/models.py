@@ -47,12 +47,24 @@ class Order(models.Model):
         DELIVERY = 'delivery', 'Delivery'
         PICKUP = 'pickup', 'Pickup'
 
+    class DispatchStatus(models.TextChoices):
+        AWAITING = 'awaiting_dispatch', 'Awaiting Dispatch'
+        DISPATCHED = 'dispatched', 'Dispatched'
+        DELIVERED = 'delivered', 'Delivered'
+
     reference = models.CharField(max_length=16, unique=True, default=new_reference, editable=False)
     user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.PROTECT, related_name='orders')
     customer_name = models.CharField(max_length=120)
     customer_phone = models.CharField(max_length=20)
     delivery_method = models.CharField(max_length=10, choices=Method.choices)
     delivery_address = models.TextField(blank=True)
+    dispatch_requested = models.BooleanField(default=False)
+    dispatch_address = models.CharField(max_length=500, blank=True)
+    dispatch_state = models.CharField(max_length=100, blank=True)
+    dispatch_city = models.CharField(max_length=100, blank=True)
+    dispatch_phone = models.CharField(max_length=20, blank=True)
+    dispatch_instructions = models.CharField(max_length=500, blank=True)
+    dispatch_status = models.CharField(max_length=24, choices=DispatchStatus.choices, blank=True, default='')
     note = models.CharField(max_length=500, blank=True)
     subtotal = models.DecimalField(max_digits=12, decimal_places=2)
     delivery_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0)

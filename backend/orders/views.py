@@ -124,7 +124,10 @@ class CheckoutView(APIView):
         order, created = services.create_order(
             user=request.user, items=pairs, customer_name=d['customer_name'], customer_phone=d['customer_phone'],
             delivery_method=d['delivery_method'], delivery_address=d.get('delivery_address', ''), note=d.get('note', ''),
-            idempotency_key=request.headers.get('Idempotency-Key', '')[:64])
+            idempotency_key=request.headers.get('Idempotency-Key', '')[:64],
+            dispatch_requested=d.get('dispatch_requested', False), dispatch_address=d.get('dispatch_address', ''),
+            dispatch_state=d.get('dispatch_state', ''), dispatch_city=d.get('dispatch_city', ''),
+            dispatch_phone=d.get('dispatch_phone', ''), dispatch_instructions=d.get('dispatch_instructions', ''))
         if created:
             Cart.objects.filter(user=request.user).first() and CartItem.objects.filter(cart__user=request.user).delete()
         out = OrderSerializer(order, context={'cfg': StoreSettings.load()}).data
@@ -135,7 +138,7 @@ class CheckoutView(APIView):
 class AdminOrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins.DestroyModelMixin, viewsets.GenericViewSet):
     permission_classes = [IsStaffUser]
     serializer_class = AdminOrderSerializer
-    filterset_fields = ['payment_status', 'fulfilment_status']
+    filterset_fields = ['payment_status', 'fulfilment_status', 'dispatch_requested']
     search_fields = ['reference', 'customer_name', 'customer_phone', 'user__email']
     ordering_fields = ['created_at', 'payment_submitted_at', 'total']
     ordering = ['-created_at']
@@ -159,6 +162,11 @@ class AdminOrderViewSet(mixins.ListModelMixin, mixins.RetrieveModelMixin, mixins
     def fulfilment(self, request, pk=None):
         return self._respond(services.set_fulfilment_status(pk, request.data.get('status'), by=request.user, note=request.data.get('note', '')[:200]))
 
+    @action(detail=True, methods=['post'], url_path='dispatch')
+    def update_dispatch(self, request, pk=None):
+        return self._respond(services.set_dispatch_status(
+            pk, request.data.get('status'), by=request.user, note=str(request.data.get('note', ''))[:200]))
+
 
 class AdminOverviewView(APIView):
     permission_classes = [IsStaffUser]
@@ -173,6 +181,9 @@ class AdminOverviewView(APIView):
             'in_stock': active.filter(stock_quantity__gt=0).count(),
             'low_stock': len(low),
             'out_of_stock': active.filter(stock_quantity=0).count(),
+            'total_orders': Order.objects.count(),
+            'orders_with_dispatch': Order.objects.filter(dispatch_requested=True).count(),
+            'orders_without_dispatch': Order.objects.filter(dispatch_requested=False).count(),
             'awaiting_verification': Order.objects.filter(payment_status=Order.Payment.SUBMITTED).exclude(fulfilment_status=Order.Fulfilment.CANCELLED).count(),
             'awaiting_payment': Order.objects.filter(payment_status=Order.Payment.AWAITING).exclude(fulfilment_status=Order.Fulfilment.CANCELLED).count(),
             'processing': Order.objects.filter(fulfilment_status=Order.Fulfilment.PROCESSING).count(),

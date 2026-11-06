@@ -6,6 +6,7 @@ import type { Order } from '../lib/types'
 
 const order = (o: Partial<Order>): Order => ({
   reference: 'ELLA-ABCD2345', customer_name: 'Ada', customer_phone: '08031234567', delivery_method: 'pickup', delivery_address: '', note: '', subtotal: '25000', delivery_fee: '0', total: '25000.00',
+  dispatch_requested: false, dispatch_address: '', dispatch_state: '', dispatch_city: '', dispatch_phone: '', dispatch_instructions: '', dispatch_status: '', dispatch_status_display: '',
   payment_status: 'awaiting_payment', payment_status_display: 'Awaiting Payment', payment_tone: 'awaiting_payment', payment_submitted_at: null, payment_reviewed_at: null, payment_rejection_reason: '',
   fulfilment_status: 'pending', fulfilment_status_display: 'Pending', items: [{ id: 1, product_name: 'Lip Tint', unit_price: '12500', quantity: 2, line_total: '25000' }], created_at: '2026-10-26T10:00:00Z',
   bank: { bank_name: 'Test Bank', account_name: 'Ella', account_number: '0123456789' },
@@ -45,5 +46,12 @@ describe('OrderPage payment states', () => {
     show(order({ fulfilment_status: 'cancelled', fulfilment_status_display: 'Cancelled', payment_tone: 'cancelled', payment_status_display: 'Cancelled', bank: null }))
     await screen.findByText(/This order was cancelled/)
     expect(screen.queryByRole('button', { name: /Done —/ })).toBeNull()
+  })
+  it('shows dispatch progress only for orders that requested dispatch', async () => {
+    show(order({ dispatch_requested: true, dispatch_address: '1 Main Street', dispatch_state: 'Lagos', dispatch_city: 'Ikeja', dispatch_phone: '08011111111', dispatch_status: 'dispatched', dispatch_status_display: 'Dispatched' }))
+    await screen.findByText('Dispatch delivery tracking')
+    expect(screen.getByText('1 Main Street')).toBeTruthy()
+    const currentStage = screen.getAllByRole('listitem').find((item) => item.textContent?.includes('Dispatched'))
+    expect(currentStage?.getAttribute('aria-current')).toBe('step')
   })
 })

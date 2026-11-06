@@ -6,7 +6,7 @@ from django.test import TransactionTestCase
 class UpgradePathTest(TransactionTestCase):
     """Existing stores keep their products/orders: migrate back to the previous schema, add old-style rows, migrate forward."""
     before = [('accounts', '0001_initial'), ('catalog', '0002_initial'), ('orders', '0001_initial'), ('core', '0002_storesettings_business_address_and_more')]
-    after = [('accounts', '0001_initial'), ('catalog', '0004_default_sections'), ('orders', '0003_payment_status_values'), ('core', '0004_default_whatsapp_number')]
+    after = [('accounts', '0001_initial'), ('catalog', '0004_default_sections'), ('orders', '0004_order_dispatch_address_order_dispatch_city_and_more'), ('core', '0004_default_whatsapp_number')]
 
     def migrate(self, targets):
         ex = MigrationExecutor(connection)
@@ -31,6 +31,9 @@ class UpgradePathTest(TransactionTestCase):
         Category2, Order2, Product2, Settings2 = (new.get_model('catalog', 'Category'), new.get_model('orders', 'Order'),
                                                   new.get_model('catalog', 'Product'), new.get_model('core', 'StoreSettings'))
         self.assertEqual(Order2.objects.get(reference='ELLA-OLDORDER').payment_status, 'awaiting_payment')
+        old_order = Order2.objects.get(reference='ELLA-OLDORDER')
+        self.assertFalse(old_order.dispatch_requested)
+        self.assertEqual((old_order.dispatch_status, old_order.dispatch_address), ('', ''))
         self.assertEqual(Product2.objects.get(slug='old-lipstick').stock_quantity, 4)
         names = list(Category2.objects.order_by('sort_order').values_list('name', flat=True))
         self.assertEqual(names, ['Lips', 'Accessories', 'Fragrance', 'Makeup'])  # existing kept, only the 3 missing defaults added

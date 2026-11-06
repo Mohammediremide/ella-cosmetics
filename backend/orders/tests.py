@@ -102,6 +102,32 @@ class CheckoutTests(TestCase):
     def test_delivery_requires_address(self):
         self.assertEqual(self.order(1, delivery_method='delivery').status_code, 400)
 
+    def test_dispatch_fields_are_required_only_when_dispatch_is_requested(self):
+        invalid = self.order(1, dispatch_requested=True)
+        self.assertEqual(invalid.status_code, 400)
+        self.assertTrue({'dispatch_address', 'dispatch_state', 'dispatch_city', 'dispatch_phone'} <= set(invalid.json()['error']['fields']))
+        self.assertEqual(Order.objects.count(), 0)
+
+        regular = self.order(1, dispatch_requested=False)
+        self.assertEqual(regular.status_code, 201, regular.content)
+        self.assertFalse(regular.json()['dispatch_requested'])
+        self.assertEqual(regular.json()['dispatch_status'], '')
+
+    def test_dispatch_details_are_saved_without_changing_order_total(self):
+        response = self.order(
+            2, dispatch_requested=True, dispatch_address='12 Allen Avenue', dispatch_state='Lagos',
+            dispatch_city='Ikeja', dispatch_phone='+234 801 234 5678', dispatch_instructions='Call on arrival',
+        )
+        self.assertEqual(response.status_code, 201, response.content)
+        data = response.json()
+        self.assertEqual(data['dispatch_status'], 'awaiting_dispatch')
+        self.assertEqual(
+            (data['dispatch_address'], data['dispatch_state'], data['dispatch_city'], data['dispatch_phone'], data['dispatch_instructions']),
+            ('12 Allen Avenue', 'Lagos', 'Ikeja', '+234 801 234 5678', 'Call on arrival'),
+        )
+        self.assertEqual(Decimal(data['total']), Decimal('25000.00'))
+        self.assertEqual(Decimal(data['delivery_fee']), Decimal('0.00'))
+
     def test_insufficient_stock_rejected_and_nothing_changes(self):
         r = self.order(6)
         self.assertEqual(r.status_code, 400)
@@ -173,6 +199,58 @@ class OrderIsolationAndAdminTests(TestCase):
     def test_customer_cannot_verify_payment_or_change_settings(self):
         self.assertEqual(self.alice_c.post(f'/api/admin/orders/{self.order.pk}/payment/', {'status': 'verified'}, format='json').status_code, 403)
         self.assertEqual(self.alice_c.patch('/api/admin/settings/', {'bank_name': 'Evil'}, format='json').status_code, 403)
+
+    def test_dispatch_is_private_and_admin_updates_status_independently(self):
+        dispatch_order, _ = services.create_order(
+            user=self.alice, items=[(self.p.id, 1)], customer_name='A', customer_phone='08011111111',
+            delivery_method='pickup', dispatch_requested=True, dispatch_address='1 Main Street',
+            dispatch_state='Lagos', dispatch_city='Ikeja', dispatch_phone='08022222222',
+        )
+        customer_data = self.alice_c.get(f'/api/orders/{dispatch_order.reference}/').json()
+        self.assertEqual((customer_data['dispatch_requested'], customer_data['dispatch_status']), (True, 'awaiting_dispatch'))
+        self.assertEqual(self.bob_c.get(f'/api/orders/{dispatch_order.reference}/').status_code, 404)
+        self.assertEqual(self.alice_c.post(
+            f'/api/admin/orders/{dispatch_order.pk}/dispatch/', {'status': 'dispatched'}, format='json',
+        ).status_code, 403)
+
+        response = self.admin_c.post(
+            f'/api/admin/orders/{dispatch_order.pk}/dispatch/', {'status': 'dispatched'}, format='json',
+        )
+        self.assertEqual(response.status_code, 200, response.content)
+        dispatch_order.refresh_from_db()
+        self.assertEqual(dispatch_order.dispatch_status, 'dispatched')
+        self.assertEqual(dispatch_order.payment_status, Order.Payment.AWAITING)
+        self.assertEqual(dispatch_order.fulfilment_status, Order.Fulfilment.PENDING)
+        self.assertEqual(response.json()['audit'][0]['field'], 'dispatch_status')
+        self.assertEqual(self.alice_c.get(f'/api/orders/{dispatch_order.reference}/').json()['dispatch_status'], 'dispatched')
+        self.assertEqual(self.admin_c.post(
+            f'/api/admin/orders/{self.order.pk}/dispatch/', {'status': 'delivered'}, format='json',
+        ).status_code, 400)
+
+    def test_dispatch_order_counts_and_existing_overview_include_both_categories(self):
+        dispatch_order, _ = services.create_order(
+            user=self.bob, items=[(self.p.id, 1)], customer_name='B', customer_phone='08033333333',
+            delivery_method='pickup', dispatch_requested=True, dispatch_address='2 Main Street',
+            dispatch_state='Lagos', dispatch_city='Yaba', dispatch_phone='08044444444',
+        )
+        pending_dispatch_order, _ = services.create_order(
+            user=self.bob, items=[(self.p.id, 1)], customer_name='B', customer_phone='08033333333',
+            delivery_method='pickup', dispatch_requested=True, dispatch_address='3 Main Street',
+            dispatch_state='Lagos', dispatch_city='Surulere', dispatch_phone='08055555555',
+        )
+        services.set_payment_status(self.order.pk, Order.Payment.VERIFIED, by=self.admin)
+        services.set_payment_status(dispatch_order.pk, Order.Payment.VERIFIED, by=self.admin)
+        services.submit_payment(pending_dispatch_order.pk, by=self.bob)
+
+        overview = self.admin_c.get('/api/admin/overview/').json()
+        self.assertEqual((overview['total_orders'], overview['orders_with_dispatch'], overview['orders_without_dispatch']), (3, 2, 1))
+        self.assertEqual((overview['awaiting_verification'], overview['awaiting_payment']), (1, 0))
+        self.assertEqual(Decimal(str(overview['verified_sales_total'])), Decimal('37500.00'))
+        with_dispatch = self.admin_c.get('/api/admin/orders/?dispatch_requested=true').json()
+        without_dispatch = self.admin_c.get('/api/admin/orders/?dispatch_requested=false').json()
+        self.assertEqual((with_dispatch['count'], without_dispatch['count']), (2, 1))
+        self.assertEqual({row['reference'] for row in with_dispatch['results']}, {dispatch_order.reference, pending_dispatch_order.reference})
+        self.assertEqual(without_dispatch['results'][0]['reference'], self.order.reference)
 
     def test_public_settings_hide_bank_details(self):
         cfg = StoreSettings.load(); cfg.account_number = '0123456789'; cfg.save()

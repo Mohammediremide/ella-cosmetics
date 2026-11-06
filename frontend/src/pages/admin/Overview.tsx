@@ -62,6 +62,7 @@ export default function Overview() {
   const { data: d, isLoading, isError, refetch } = useQuery({ queryKey: ['admin', 'overview'], queryFn: () => api<any>('/admin/overview/') })
   if (isError) return <ErrorState onRetry={() => refetch()} />
   const cards: [string, string | number, string?][] | undefined = d && [
+    ['Total orders', d.total_orders, '/admin/orders'],
     ['Needs payment verification', d.awaiting_verification, '/admin/payments'], ['Awaiting payment', d.awaiting_payment, '/admin/payments'], ['Processing orders', d.processing, '/admin/orders'], ['Verified sales', naira(d.verified_sales_total)],
     ['Total products', d.total_products, '/admin/products'], ['In stock', d.in_stock], ['Low stock', d.low_stock], ['Out of stock', d.out_of_stock],
   ]
@@ -69,7 +70,7 @@ export default function Overview() {
     <div>
       <h1 className="text-4xl">Overview</h1>
       <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-4">
-        {isLoading ? Array.from({ length: 8 }, (_, i) => <Skeleton key={i} className="h-24" />) : cards!.map(([k, v, to]) => {
+        {isLoading ? Array.from({ length: 9 }, (_, i) => <Skeleton key={i} className="h-24" />) : cards!.map(([k, v, to]) => {
           const inner = <><p className="text-xs text-muted">{k}</p><p className="mt-2 font-serif text-3xl">{v}</p></>
           return to ? <Link key={k} to={to} className="card block p-4 hover:border-burgundy">{inner}</Link> : <div key={k} className="card p-4">{inner}</div>
         })}

@@ -17,8 +17,28 @@ const schema = z.object({
   customer_phone: z.string().trim().regex(/^\+?[0-9\s-]{7,20}$/, 'Enter a valid phone number'),
   delivery_method: z.enum(['delivery', 'pickup']),
   delivery_address: z.string().trim().max(500).optional(),
+  dispatch_requested: z.boolean(),
+  dispatch_address: z.string().trim().max(500).optional(),
+  dispatch_state: z.string().trim().max(100).optional(),
+  dispatch_city: z.string().trim().max(100).optional(),
+  dispatch_phone: z.string().trim().regex(/^\+?[0-9\s-]{7,20}$/, 'Enter a valid phone number').optional().or(z.literal('')),
+  dispatch_instructions: z.string().max(500).optional(),
   note: z.string().max(500).optional(),
-}).refine((d) => d.delivery_method !== 'delivery' || !!d.delivery_address?.trim(), { path: ['delivery_address'], message: 'Enter your delivery address' })
+}).superRefine((d, ctx) => {
+  if (d.delivery_method === 'delivery' && !d.delivery_address?.trim())
+    ctx.addIssue({ code: z.ZodIssueCode.custom, path: ['delivery_address'], message: 'Enter your delivery address' })
+  if (d.dispatch_requested) {
+    const required: [keyof Form, string][] = [
+      ['dispatch_address', 'Enter your full delivery address'],
+      ['dispatch_state', 'Enter your state'],
+      ['dispatch_city', 'Enter your city or area'],
+      ['dispatch_phone', 'Enter your phone number for dispatch'],
+    ]
+    for (const [field, message] of required) {
+      if (!d[field]?.toString().trim()) ctx.addIssue({ code: z.ZodIssueCode.custom, path: [field], message })
+    }
+  }
+})
 type Form = z.infer<typeof schema>
 
 export default function Checkout() {
@@ -31,9 +51,15 @@ export default function Checkout() {
   const only = s && (s.delivery_enabled !== s.pickup_enabled) ? (s.delivery_enabled ? 'delivery' : 'pickup') : undefined
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<Form>({
     resolver: zodResolver(schema),
-    values: { customer_name: user?.name ?? '', customer_phone: user?.phone ?? '', delivery_method: only ?? (s?.pickup_enabled ? 'pickup' : 'delivery'), delivery_address: '', note: '' },
+    values: {
+      customer_name: user?.name ?? '', customer_phone: user?.phone ?? '',
+      delivery_method: only ?? (s?.pickup_enabled ? 'pickup' : 'delivery'), delivery_address: '',
+      dispatch_requested: false, dispatch_address: '', dispatch_state: '', dispatch_city: '',
+      dispatch_phone: user?.phone ?? '', dispatch_instructions: '', note: '',
+    },
   })
   const method = watch('delivery_method')
+  const dispatchRequested = watch('dispatch_requested')
 
   if (authLoading || !s || loading) return <div className="container-x py-10"><Skeleton className="h-96" /></div>
   if (!user) return <Navigate to="/login?next=/checkout" replace />
@@ -72,8 +98,37 @@ export default function Checkout() {
         )}
         {method === 'pickup' && s.pickup_instructions && <p className="text-sm text-muted">{s.pickup_instructions}</p>}
         {method === 'delivery' && <Field label="Delivery address" htmlFor="a" error={errors.delivery_address?.message ?? fieldError(serverErr, 'delivery_address')}><textarea id="a" rows={3} className="input py-3" autoComplete="street-address" {...register('delivery_address')} /></Field>}
+        <section className="rounded-brand border border-taupe/20 p-4">
+          <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm font-medium">
+            <input type="checkbox" className="h-4 w-4 accent-burgundy" {...register('dispatch_requested')} />
+            I need dispatch delivery
+          </label>
+          <div className={`overflow-hidden transition-[max-height,opacity] duration-300 ease-in-out ${dispatchRequested ? 'max-h-[900px] opacity-100' : 'max-h-0 opacity-0'}`}
+            aria-hidden={!dispatchRequested}>
+            <fieldset disabled={!dispatchRequested} className="space-y-4 pt-3">
+              <p className="rounded-brand bg-blush/50 p-3 text-sm leading-relaxed">Please note: Dispatch/delivery fees are paid separately by the customer. Ella Cosmetics does not cover dispatch charges. The dispatch fee will depend on your delivery location.</p>
+              <Field label="Full delivery address" htmlFor="dispatch-address" error={errors.dispatch_address?.message ?? fieldError(serverErr, 'dispatch_address')}>
+                <textarea id="dispatch-address" rows={3} className="input py-3" autoComplete="street-address" {...register('dispatch_address')} />
+              </Field>
+              <div className="grid gap-4 sm:grid-cols-2">
+                <Field label="State" htmlFor="dispatch-state" error={errors.dispatch_state?.message ?? fieldError(serverErr, 'dispatch_state')}>
+                  <input id="dispatch-state" className="input" autoComplete="address-level1" {...register('dispatch_state')} />
+                </Field>
+                <Field label="City/area" htmlFor="dispatch-city" error={errors.dispatch_city?.message ?? fieldError(serverErr, 'dispatch_city')}>
+                  <input id="dispatch-city" className="input" autoComplete="address-level2" {...register('dispatch_city')} />
+                </Field>
+              </div>
+              <Field label="Phone number for dispatch" htmlFor="dispatch-phone" error={errors.dispatch_phone?.message ?? fieldError(serverErr, 'dispatch_phone')}>
+                <input id="dispatch-phone" className="input" inputMode="tel" autoComplete="tel" {...register('dispatch_phone')} />
+              </Field>
+              <Field label="Additional delivery instructions (optional)" htmlFor="dispatch-instructions" error={errors.dispatch_instructions?.message ?? fieldError(serverErr, 'dispatch_instructions')}>
+                <textarea id="dispatch-instructions" rows={2} className="input py-3" {...register('dispatch_instructions')} />
+              </Field>
+            </fieldset>
+          </div>
+        </section>
         <Field label="Order note (optional)" htmlFor="o"><textarea id="o" rows={2} className="input py-3" {...register('note')} /></Field>
-        {serverErr instanceof ApiError && fieldError(serverErr, 'problems') === undefined && !Object.keys(serverErr.fields).some((k) => ['customer_name', 'customer_phone', 'delivery_address'].includes(k)) && <p role="alert" className="field-error text-sm">{serverErr.message}</p>}
+        {serverErr instanceof ApiError && fieldError(serverErr, 'problems') === undefined && !Object.keys(serverErr.fields).some((k) => ['customer_name', 'customer_phone', 'delivery_address', 'dispatch_address', 'dispatch_state', 'dispatch_city', 'dispatch_phone', 'dispatch_instructions'].includes(k)) && <p role="alert" className="field-error text-sm">{serverErr.message}</p>}
       </div>
 
       <aside className="card h-fit p-6 lg:col-span-2 lg:sticky lg:top-24">

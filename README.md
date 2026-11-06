@@ -37,6 +37,8 @@ Open the site at **http://localhost:5173** (not 127.0.0.1: CSRF trusts `FRONTEND
 
 **Checkout and payment.** Stock is reserved when the order is created. The order page shows the total, bank details (copy button), a WhatsApp link pre-filled with order number and amount, and the 5 steps. The customer presses **Done — I've Sent the Receipt** → status becomes *Processing — Awaiting Verification* (it never becomes paid by itself). In **Admin → Payment Verification** staff verify (after seeing the money in the bank) or reject (reason required). Payment status and fulfilment status are separate fields; every change is audited with who/when.
 
+Customers may also opt into **dispatch delivery** at checkout and provide a delivery address, state, city/area, and phone number. Dispatch charges are paid separately by the customer and are never added to the cosmetics order total. Admin → Orders separates dispatch and non-dispatch orders; dispatch progress is tracked independently from payment and order fulfilment. The dispatch database migration only adds nullable/blank-compatible fields and defaults existing orders to no dispatch.
+
 Payment statuses: Awaiting Payment → Processing — Awaiting Verification → Payment Successful / Payment Rejected (customer can resubmit). Cancelled orders read "Cancelled".
 
 **Inventory policy.** Deducted at order creation; cancel or expiry restores exactly once; verify/reject/Done never touch stock. Every change is in the product's stock history. Unpaid (*Awaiting Payment* or *Rejected*) orders expire after the window in Admin → Settings (default 24 h). Orders where the customer pressed Done are **not** auto-expired: an admin must verify or reject them.

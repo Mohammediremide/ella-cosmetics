@@ -21,6 +21,8 @@ export interface PublicSettings {
 export interface OrderItem { id: number; product_name: string; unit_price: string; quantity: number; line_total: string }
 export interface Order {
   id?: number; reference: string; customer_name: string; customer_phone: string; delivery_method: 'delivery' | 'pickup'; delivery_address: string; note: string
+  dispatch_requested: boolean; dispatch_address: string; dispatch_state: string; dispatch_city: string; dispatch_phone: string
+  dispatch_instructions: string; dispatch_status: '' | 'awaiting_dispatch' | 'dispatched' | 'delivered'; dispatch_status_display: string
   subtotal: string; delivery_fee: string; total: string; payment_status: string; payment_status_display: string; payment_tone: string
   payment_submitted_at: string | null; payment_reviewed_at: string | null; payment_rejection_reason: string
   fulfilment_status: string; fulfilment_status_display: string; items: OrderItem[]; created_at: string

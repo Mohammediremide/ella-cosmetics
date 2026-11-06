@@ -41,7 +41,9 @@ def _merge(items):
     return merged
 
 
-def create_order(*, user, items, customer_name, customer_phone, delivery_method, delivery_address='', note='', idempotency_key=''):
+def create_order(*, user, items, customer_name, customer_phone, delivery_method, delivery_address='', note='', idempotency_key='',
+                 dispatch_requested=False, dispatch_address='', dispatch_state='', dispatch_city='', dispatch_phone='',
+                 dispatch_instructions=''):
     """Returns (order, created). Prices, fees and stock are ALL read from the database, never the client."""
     try:
         with transaction.atomic():
@@ -64,6 +66,19 @@ def create_order(*, user, items, customer_name, customer_phone, delivery_method,
             else:
                 _fail('invalid_method', 'Choose delivery or pickup.')
 
+            dispatch_values = {}
+            if dispatch_requested:
+                dispatch_values = {
+                    'dispatch_address': dispatch_address.strip(),
+                    'dispatch_state': dispatch_state.strip(),
+                    'dispatch_city': dispatch_city.strip(),
+                    'dispatch_phone': dispatch_phone.strip(),
+                    'dispatch_instructions': dispatch_instructions.strip(),
+                }
+                required = ('dispatch_address', 'dispatch_state', 'dispatch_city', 'dispatch_phone')
+                if any(not dispatch_values[field] for field in required):
+                    raise ValidationError({'dispatch_requested': ['Complete all required dispatch delivery information.']})
+
             wanted = _merge(items)
             # Lock rows in a stable order (by id) so concurrent checkouts cannot deadlock or oversell.
             products = {p.id: p for p in Product.objects.sellable().select_for_update(of=('self',)).filter(id__in=wanted).order_by('id')}
@@ -81,6 +96,8 @@ def create_order(*, user, items, customer_name, customer_phone, delivery_method,
             order = Order.objects.create(
                 user=user, customer_name=customer_name.strip(), customer_phone=customer_phone.strip(),
                 delivery_method=delivery_method, delivery_address=delivery_address.strip(), note=note.strip(),
+                dispatch_requested=dispatch_requested, dispatch_status=Order.DispatchStatus.AWAITING if dispatch_requested else '',
+                **dispatch_values,
                 subtotal=subtotal, delivery_fee=fee, total=subtotal + fee, idempotency_key=idempotency_key,
                 expires_at=timezone.now() + timedelta(hours=cfg.unpaid_order_hours),
             )
@@ -211,6 +228,21 @@ def set_fulfilment_status(order_id, new_status, *, by, note=''):
         _audit(order, 'fulfilment', order.fulfilment_status, new_status, by, note)
         order.fulfilment_status = new_status
         order.save(update_fields=['fulfilment_status', 'updated_at'])
+        return order
+
+
+def set_dispatch_status(order_id, new_status, *, by, note=''):
+    with transaction.atomic():
+        order = Order.objects.select_for_update().get(pk=order_id)
+        if not order.dispatch_requested:
+            _fail('dispatch_not_requested', 'Dispatch status can only be updated for dispatch orders.')
+        if new_status not in Order.DispatchStatus.values:
+            _fail('invalid_status', 'Unknown dispatch status.')
+        if order.dispatch_status == new_status:
+            return order
+        _audit(order, 'dispatch_status', order.dispatch_status, new_status, by, note)
+        order.dispatch_status = new_status
+        order.save(update_fields=['dispatch_status', 'updated_at'])
         return order
 
 

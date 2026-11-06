@@ -22,13 +22,16 @@ class OrderSerializer(serializers.ModelSerializer):
     payment_status_display = serializers.SerializerMethodField()
     payment_tone = serializers.SerializerMethodField()
     fulfilment_status_display = serializers.CharField(source='get_fulfilment_status_display', read_only=True)
+    dispatch_status_display = serializers.CharField(source='get_dispatch_status_display', read_only=True)
     bank = serializers.SerializerMethodField()
     whatsapp_url = serializers.SerializerMethodField()          # send the receipt
     whatsapp_support_url = serializers.SerializerMethodField()  # get help (e.g. rejected payment)
 
     class Meta:
         model = Order
-        fields = ['reference', 'customer_name', 'customer_phone', 'delivery_method', 'delivery_address', 'note', 'subtotal',
+        fields = ['reference', 'customer_name', 'customer_phone', 'delivery_method', 'delivery_address', 'dispatch_requested',
+                  'dispatch_address', 'dispatch_state', 'dispatch_city', 'dispatch_phone', 'dispatch_instructions',
+                  'dispatch_status', 'dispatch_status_display', 'note', 'subtotal',
                   'delivery_fee', 'total', 'payment_status', 'payment_status_display', 'payment_tone', 'payment_submitted_at',
                   'payment_reviewed_at', 'payment_rejection_reason', 'fulfilment_status', 'fulfilment_status_display',
                   'items', 'bank', 'whatsapp_url', 'whatsapp_support_url', 'created_at', 'expires_at']
@@ -90,5 +93,25 @@ class CheckoutSerializer(serializers.Serializer):
     customer_phone = serializers.RegexField(r'^\+?[0-9\s\-]{7,20}$', error_messages={'invalid': 'Enter a valid phone number.'})
     delivery_method = serializers.ChoiceField(choices=Order.Method.choices)
     delivery_address = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    dispatch_requested = serializers.BooleanField(required=False, default=False)
+    dispatch_address = serializers.CharField(required=False, allow_blank=True, max_length=500)
+    dispatch_state = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    dispatch_city = serializers.CharField(required=False, allow_blank=True, max_length=100)
+    dispatch_phone = serializers.RegexField(r'^\+?[0-9\s\-]{7,20}$', required=False, allow_blank=True,
+                                            error_messages={'invalid': 'Enter a valid dispatch phone number.'})
+    dispatch_instructions = serializers.CharField(required=False, allow_blank=True, max_length=500)
     note = serializers.CharField(required=False, allow_blank=True, max_length=500)
     items = CheckoutItemSerializer(many=True, required=False)  # omitted => use the server-side cart
+
+    def validate(self, attrs):
+        if attrs.get('dispatch_requested'):
+            required = {
+                'dispatch_address': 'Enter your full delivery address.',
+                'dispatch_state': 'Enter your state.',
+                'dispatch_city': 'Enter your city or area.',
+                'dispatch_phone': 'Enter your phone number for dispatch.',
+            }
+            errors = {field: [message] for field, message in required.items() if not attrs.get(field, '').strip()}
+            if errors:
+                raise serializers.ValidationError(errors)
+        return attrs

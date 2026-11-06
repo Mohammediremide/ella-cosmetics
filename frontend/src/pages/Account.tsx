@@ -22,7 +22,7 @@ export default function Account() {
         : <ul className="mt-4 space-y-3">{data.results.map((o) => (
             <li key={o.reference}><Link to={`/orders/${o.reference}`} className="card flex flex-wrap items-center justify-between gap-3 p-4 hover:border-burgundy">
               <div><p className="font-medium tracking-wide">{o.reference}</p><p className="text-xs text-muted">{new Date(o.created_at).toLocaleDateString('en-NG', { dateStyle: 'medium' })} · {o.items.length} {o.items.length === 1 ? 'item' : 'items'}</p></div>
-              <div className="flex flex-wrap items-center gap-2"><StatusBadge value={o.payment_tone} label={o.payment_status_display} /><StatusBadge value={o.fulfilment_status} label={o.fulfilment_status_display} /><span className="font-medium">{naira(o.total)}</span></div>
+              <div className="flex flex-wrap items-center gap-2"><StatusBadge value={o.payment_tone} label={o.payment_status_display} /><StatusBadge value={o.fulfilment_status} label={o.fulfilment_status_display} />{o.dispatch_requested && <StatusBadge value={o.dispatch_status} label={o.dispatch_status_display} />}<span className="font-medium">{naira(o.total)}</span></div>
             </Link></li>))}</ul>}
     </div>
   )

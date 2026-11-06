@@ -24,7 +24,11 @@ export default function OrderPage() {
   const key = ['orders', reference]
   const { data: o, isLoading, error, refetch } = useQuery({
     queryKey: key, retry: false, queryFn: () => api<Order>(`/orders/${reference}/`),
-    refetchInterval: (q) => (q.state.data?.payment_status === 'pending_verification' ? 30_000 : false), // pick up the admin's decision
+    refetchInterval: (q) => {
+      const current = q.state.data
+      return current?.payment_status === 'pending_verification'
+        || (current?.dispatch_requested && current.dispatch_status !== 'delivered') ? 30_000 : false
+    },
   })
   const done = useMutation({
     mutationFn: () => api<Order>(`/orders/${reference}/submit-payment/`, { method: 'POST' }),
@@ -56,6 +60,37 @@ export default function OrderPage() {
         <span className="text-xs text-muted">Payment</span><StatusBadge value={o.payment_tone} label={o.payment_status_display} />
         <span className="ml-2 text-xs text-muted">Order</span><StatusBadge value={o.fulfilment_status} label={o.fulfilment_status_display} />
       </div>
+
+      {o.dispatch_requested && (
+        <section className="card mt-8 p-6" aria-live="polite">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <h2 className="text-2xl">Dispatch delivery tracking</h2>
+            <StatusBadge value={o.dispatch_status} label={o.dispatch_status_display} />
+          </div>
+          <ol className="mt-5 grid gap-3 sm:grid-cols-3">
+            {([
+              ['awaiting_dispatch', 'Awaiting Dispatch'],
+              ['dispatched', 'Dispatched'],
+              ['delivered', 'Delivered'],
+            ] as const).map(([status, label]) => {
+              const active = status === o.dispatch_status
+              const completed = ['awaiting_dispatch', 'dispatched', 'delivered'].indexOf(o.dispatch_status) >= ['awaiting_dispatch', 'dispatched', 'delivered'].indexOf(status)
+              return <li key={status} aria-current={active ? 'step' : undefined}
+                className={`rounded-brand border p-3 text-sm ${active ? 'border-burgundy bg-blush/50 font-semibold text-burgundy' : completed ? 'border-burgundy/40 text-ink' : 'border-taupe/20 text-muted'}`}>
+                <span className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full bg-burgundy text-xs text-white">{completed ? '✓' : '·'}</span>{label}
+              </li>
+            })}
+          </ol>
+          <dl className="mt-5 grid gap-2 border-t border-taupe/20 pt-4 text-sm sm:grid-cols-2">
+            <div className="sm:col-span-2"><dt className="inline text-muted">Delivery address: </dt><dd className="inline">{o.dispatch_address}</dd></div>
+            <div><dt className="inline text-muted">State: </dt><dd className="inline">{o.dispatch_state}</dd></div>
+            <div><dt className="inline text-muted">City/area: </dt><dd className="inline">{o.dispatch_city}</dd></div>
+            <div><dt className="inline text-muted">Phone: </dt><dd className="inline">{o.dispatch_phone}</dd></div>
+            {o.dispatch_instructions && <div className="sm:col-span-2"><dt className="inline text-muted">Instructions: </dt><dd className="inline">{o.dispatch_instructions}</dd></div>}
+          </dl>
+          <p className="mt-3 text-xs text-muted">Dispatch charges are paid separately by you and are not included in the order total.</p>
+        </section>
+      )}
 
       {paid && (
         <section className="mt-8 rounded-brand border border-emerald-200 bg-emerald-50 p-6" aria-live="polite">
