@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, Navigate, useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
@@ -11,6 +11,7 @@ import { useToast } from '../lib/toast'
 import type { Order } from '../lib/types'
 import { usePublicSettings } from '../components/Layout'
 import { Field, Skeleton } from '../components/ui'
+import { isLateNightOrderNotice } from '../lib/deliveryNotice'
 
 const schema = z.object({
   customer_name: z.string().trim().min(2, 'Enter your full name'),
@@ -47,7 +48,14 @@ export default function Checkout() {
   const { data: s } = usePublicSettings()
   const nav = useNavigate(), toast = useToast(), qc = useQueryClient()
   const [serverErr, setServerErr] = useState<unknown>(null)
+  const [now, setNow] = useState(() => new Date())
   const key = useRef(crypto.randomUUID()) // same key on retries => the server never creates a duplicate order
+
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(new Date()), 30_000)
+    return () => window.clearInterval(timer)
+  }, [])
+
   const only = s && (s.delivery_enabled !== s.pickup_enabled) ? (s.delivery_enabled ? 'delivery' : 'pickup') : undefined
   const { register, handleSubmit, watch, formState: { errors, isSubmitting } } = useForm<Form>({
     resolver: zodResolver(schema),
@@ -66,6 +74,7 @@ export default function Checkout() {
   if (!cart.items.length) return <Navigate to="/cart" replace />
   const fee = method === 'delivery' ? Number(s.delivery_fee) : 0
   const none = !s.delivery_enabled && !s.pickup_enabled
+  const showLateNightNotice = isLateNightOrderNotice(now)
 
   const submit = handleSubmit(async (d) => {
     setServerErr(null)
@@ -84,6 +93,12 @@ export default function Checkout() {
     <form onSubmit={submit} noValidate className="container-x grid gap-10 py-10 lg:grid-cols-5">
       <div className="space-y-5 lg:col-span-3">
         <h1 className="text-4xl">Checkout</h1>
+        {showLateNightNotice && (
+          <p role="alert" className="rounded-brand border border-burgundy/30 bg-blush p-4 text-sm font-medium leading-relaxed">
+            Orders placed after 8:00pm cannot be delivered or picked up tomorrow.
+            They will be delivered or available for pickup the day after tomorrow.
+          </p>
+        )}
         {none && <p role="alert" className="rounded-brand bg-blush p-4 text-sm">Ordering is temporarily unavailable. Please contact the store.</p>}
         <Field label="Full name" htmlFor="n" error={errors.customer_name?.message ?? fieldError(serverErr, 'customer_name')}><input id="n" className="input" autoComplete="name" {...register('customer_name')} /></Field>
         <Field label="Phone number" htmlFor="p" error={errors.customer_phone?.message ?? fieldError(serverErr, 'customer_phone')}><input id="p" className="input" inputMode="tel" autoComplete="tel" {...register('customer_phone')} /></Field>
