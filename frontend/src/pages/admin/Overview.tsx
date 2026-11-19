@@ -64,7 +64,7 @@ export default function Overview() {
   const cards: [string, string | number, string?][] | undefined = d && [
     ['Total orders', d.total_orders, '/admin/orders'],
     ['Needs payment verification', d.awaiting_verification, '/admin/payments'], ['Awaiting payment', d.awaiting_payment, '/admin/payments'], ['Processing orders', d.processing, '/admin/orders'], ['Verified sales', naira(d.verified_sales_total)],
-    ['Total products', d.total_products, '/admin/products'], ['In stock', d.in_stock, '/admin/products?availability=in_stock&active=true'], ['Low stock', d.low_stock, '/admin/products?availability=low_stock&active=true'], ['Out of stock', d.out_of_stock, '/admin/products?availability=out_of_stock&active=true'],
+    ['Total products', d.total_products, '/admin/products'], ['In stock', d.in_stock, '/admin/products?stock_status=in_stock&active=true'], ['Low stock', d.low_stock, '/admin/products?stock_status=low_stock&active=true'], ['Out of stock', d.out_of_stock, '/admin/products?stock_status=out_of_stock&active=true'],
   ]
   return (
     <div>

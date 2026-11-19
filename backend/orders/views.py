@@ -1,5 +1,6 @@
 from django.db import transaction
-from django.db.models import Count, Q, Sum
+from django.db.models import Count, F, Q, Sum, Value
+from django.db.models.functions import Coalesce
 from rest_framework import generics, mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -175,10 +176,13 @@ class AdminOverviewView(APIView):
         cfg = StoreSettings.load()
         active = Product.objects.filter(is_active=True)
         low = [p for p in active.filter(stock_quantity__gt=0) if p.stock_status(cfg.default_low_stock_threshold) == 'low_stock']
+        in_stock = active.annotate(
+            _stock_threshold=Coalesce('low_stock_threshold', Value(cfg.default_low_stock_threshold))
+        ).filter(stock_quantity__gt=F('_stock_threshold')).count()
         paid = Order.objects.filter(payment_status=Order.Payment.VERIFIED).exclude(fulfilment_status=Order.Fulfilment.CANCELLED)
         return Response({
             'total_products': active.count(),
-            'in_stock': active.filter(stock_quantity__gt=0).count(),
+            'in_stock': in_stock,
             'low_stock': len(low),
             'out_of_stock': active.filter(stock_quantity=0).count(),
             'total_orders': Order.objects.count(),

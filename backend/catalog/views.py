@@ -18,6 +18,7 @@ from .serializers import (AdminCategorySerializer, AdminProductSerializer, Categ
 class ProductFilter(df.FilterSet):
     category = df.CharFilter(field_name='category__slug')
     availability = df.ChoiceFilter(choices=[('in_stock', ''), ('low_stock', ''), ('out_of_stock', '')], method='filter_availability')
+    stock_status = df.ChoiceFilter(choices=[('in_stock', ''), ('low_stock', ''), ('out_of_stock', '')], method='filter_stock_status')
     active = df.BooleanFilter(field_name='is_active')
     featured = df.BooleanFilter(field_name='is_featured')
     new = df.BooleanFilter(method='filter_new')
@@ -35,6 +36,17 @@ class ProductFilter(df.FilterSet):
         return qs.annotate(
             _stock_threshold=Coalesce('low_stock_threshold', Value(default_threshold))
         ).filter(stock_quantity__gt=0, stock_quantity__lte=F('_stock_threshold'))
+
+    def filter_stock_status(self, qs, name, value):
+        if value == 'out_of_stock':
+            return qs.filter(stock_quantity=0)
+        default_threshold = StoreSettings.load().default_low_stock_threshold
+        qs = qs.annotate(
+            _stock_threshold=Coalesce('low_stock_threshold', Value(default_threshold))
+        )
+        if value == 'low_stock':
+            return qs.filter(stock_quantity__gt=0, stock_quantity__lte=F('_stock_threshold'))
+        return qs.filter(stock_quantity__gt=F('_stock_threshold'))
 
     def filter_new(self, qs, name, value):
         days = StoreSettings.load().new_arrival_days
