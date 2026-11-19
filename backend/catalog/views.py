@@ -1,6 +1,7 @@
 from datetime import timedelta
 from django.db import transaction
-from django.db.models import Count, Max, Q
+from django.db.models import Count, F, Max, Q, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 from django_filters import rest_framework as df
 from rest_framework import generics, status, viewsets
@@ -16,7 +17,7 @@ from .serializers import (AdminCategorySerializer, AdminProductSerializer, Categ
 
 class ProductFilter(df.FilterSet):
     category = df.CharFilter(field_name='category__slug')
-    availability = df.ChoiceFilter(choices=[('in_stock', ''), ('out_of_stock', '')], method='filter_availability')
+    availability = df.ChoiceFilter(choices=[('in_stock', ''), ('low_stock', ''), ('out_of_stock', '')], method='filter_availability')
     active = df.BooleanFilter(field_name='is_active')
     featured = df.BooleanFilter(field_name='is_featured')
     new = df.BooleanFilter(method='filter_new')
@@ -26,7 +27,14 @@ class ProductFilter(df.FilterSet):
         fields = []
 
     def filter_availability(self, qs, name, value):
-        return qs.filter(stock_quantity__gt=0) if value == 'in_stock' else qs.filter(stock_quantity=0)
+        if value == 'in_stock':
+            return qs.filter(stock_quantity__gt=0)
+        if value == 'out_of_stock':
+            return qs.filter(stock_quantity=0)
+        default_threshold = StoreSettings.load().default_low_stock_threshold
+        return qs.annotate(
+            _stock_threshold=Coalesce('low_stock_threshold', Value(default_threshold))
+        ).filter(stock_quantity__gt=0, stock_quantity__lte=F('_stock_threshold'))
 
     def filter_new(self, qs, name, value):
         days = StoreSettings.load().new_arrival_days

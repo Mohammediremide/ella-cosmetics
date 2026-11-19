@@ -36,8 +36,11 @@ class SectionTests(TestCase):
         d = APIClient().get(url).json() if url == '/api/categories/' else self.c.get(url).json()
         return [x['name'] for x in d]
 
-    def add_product(self, section, name='Thing', stock=5, price='1000'):
-        r = self.c.post('/api/admin/products/', {'name': name, 'price': price, 'stock_quantity': stock, 'category_id': section, 'description': 'd'}, format='json')
+    def add_product(self, section, name='Thing', stock=5, price='1000', low_stock_threshold=None):
+        data = {'name': name, 'price': price, 'stock_quantity': stock, 'category_id': section, 'description': 'd'}
+        if low_stock_threshold is not None:
+            data['low_stock_threshold'] = low_stock_threshold
+        r = self.c.post('/api/admin/products/', data, format='json')
         self.assertEqual(r.status_code, 201, r.content)
         return r.json()
 
@@ -205,16 +208,20 @@ class SectionTests(TestCase):
 
     def test_admin_inventory_filters_show_active_in_stock_and_out_of_stock_products(self):
         mk = Category.objects.get(name='Makeup')
-        self.add_product(mk.id, 'Available', stock=2)
+        self.add_product(mk.id, 'Available', stock=8)
+        self.add_product(mk.id, 'Low', stock=5)
+        self.add_product(mk.id, 'Custom low', stock=2, low_stock_threshold=2)
         self.add_product(mk.id, 'Unavailable', stock=0)
         archived = self.add_product(mk.id, 'Archived', stock=0)
         self.c.delete(f"/api/admin/products/{archived['id']}/")
 
         in_stock = self.c.get('/api/admin/products/?availability=in_stock&active=true').json()
+        low_stock = self.c.get('/api/admin/products/?availability=low_stock&active=true').json()
         out_of_stock = self.c.get('/api/admin/products/?availability=out_of_stock&active=true').json()
 
-        self.assertEqual([p['name'] for p in in_stock['results']], ['Available'])
-        self.assertEqual([p['name'] for p in out_of_stock['results']], ['Unavailable'])
+        self.assertEqual({p['name'] for p in in_stock['results']}, {'Custom low', 'Low', 'Available'})
+        self.assertEqual({p['name'] for p in low_stock['results']}, {'Custom low', 'Low'})
+        self.assertEqual({p['name'] for p in out_of_stock['results']}, {'Unavailable'})
 
     def test_reorder_controls_storefront_order(self):
         ids = {c.name: c.id for c in Category.objects.all()}

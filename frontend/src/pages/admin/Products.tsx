@@ -123,7 +123,7 @@ export default function Products() {
   const qc = useQueryClient(), toast = useToast()
   const [searchParams] = useSearchParams()
   const requestedAvailability = searchParams.get('availability')
-  const availability = requestedAvailability === 'in_stock' || requestedAvailability === 'out_of_stock' ? requestedAvailability : ''
+  const availability = requestedAvailability === 'in_stock' || requestedAvailability === 'low_stock' || requestedAvailability === 'out_of_stock' ? requestedAvailability : ''
   const [search, setSearch] = useState(''), [sectionFilter, setSectionFilter] = useState(''), [page, setPage] = useState(1)
   const [stockFor, setStockFor] = useState<Product | null>(null)
   const [editing, setEditing] = useState<Product | 'new' | null>(null)
@@ -138,6 +138,7 @@ export default function Products() {
         {([
           { label: 'All products', value: '', to: '/admin/products' },
           { label: 'In stock', value: 'in_stock', to: '/admin/products?availability=in_stock&active=true' },
+          { label: 'Low stock', value: 'low_stock', to: '/admin/products?availability=low_stock&active=true' },
           { label: 'Out of stock', value: 'out_of_stock', to: '/admin/products?availability=out_of_stock&active=true' },
         ]).map(({ label, value, to }) => (
           <Link key={label} to={to} onClick={() => setPage(1)} aria-current={availability === value ? 'page' : undefined}
@@ -151,7 +152,7 @@ export default function Products() {
         <select className="input max-w-[14rem]" aria-label="Filter by section" value={sectionFilter} onChange={(e) => { setSectionFilter(e.target.value); setPage(1) }}><option value="">All sections</option>{cats.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}</select>
       </div>
       <div className="card mt-4 overflow-x-auto">
-        {isLoading ? <Skeleton className="h-48" /> : !data?.results.length ? <Empty title={availability === 'in_stock' ? 'No in-stock products' : availability === 'out_of_stock' ? 'No out-of-stock products' : 'No products yet'} text={availability ? 'No active products match this stock status.' : 'Create your first product to see it in the store.'} /> : (
+        {isLoading ? <Skeleton className="h-48" /> : !data?.results.length ? <Empty title={availability === 'in_stock' ? 'No in-stock products' : availability === 'low_stock' ? 'No low-stock products' : availability === 'out_of_stock' ? 'No out-of-stock products' : 'No products yet'} text={availability ? 'No active products match this stock status.' : 'Create your first product to see it in the store.'} /> : (
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-taupe/20 text-xs uppercase tracking-wider text-muted"><tr><th className="p-3">Product</th><th>Section</th><th>Price</th><th>Stock</th><th>Status</th><th className="pr-3 text-right">Actions</th></tr></thead>
             <tbody className="divide-y divide-taupe/15">{data.results.map((p) => (
