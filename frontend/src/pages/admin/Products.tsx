@@ -3,7 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { Link } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { History, Pencil, Plus, RefreshCw, Trash2, Upload } from 'lucide-react'
 import { api, ApiError, fieldError, naira } from '../../lib/api'
 import { useToast } from '../../lib/toast'
@@ -121,22 +121,37 @@ function StockModal({ product, onClose }: { product: Product | null; onClose: ()
 
 export default function Products() {
   const qc = useQueryClient(), toast = useToast()
+  const [searchParams] = useSearchParams()
+  const requestedAvailability = searchParams.get('availability')
+  const availability = requestedAvailability === 'in_stock' || requestedAvailability === 'out_of_stock' ? requestedAvailability : ''
   const [search, setSearch] = useState(''), [sectionFilter, setSectionFilter] = useState(''), [page, setPage] = useState(1)
   const [stockFor, setStockFor] = useState<Product | null>(null)
   const [editing, setEditing] = useState<Product | 'new' | null>(null)
   const [confirm, setConfirm] = useState<Product | null>(null)
-  const { data, isLoading } = useQuery({ queryKey: ['admin', 'products', search, sectionFilter, page], queryFn: () => api<Page<Product>>(`/admin/products/?search=${encodeURIComponent(search)}&page=${page}${sectionFilter ? `&category=${sectionFilter}` : ''}`) })
+  const { data, isLoading } = useQuery({ queryKey: ['admin', 'products', search, sectionFilter, availability, page], queryFn: () => api<Page<Product>>(`/admin/products/?search=${encodeURIComponent(search)}&page=${page}${sectionFilter ? `&category=${sectionFilter}` : ''}${availability ? `&availability=${availability}&active=true` : ''}`) })
   const { data: cats = [] } = useQuery({ queryKey: ['admin', 'categories'], queryFn: () => api<Category[]>('/admin/categories/') })
   const archive = useMutation({ mutationFn: (p: Product) => api(`/admin/products/${p.id}/`, { method: 'DELETE' }), onSuccess: () => { qc.invalidateQueries({ queryKey: ['admin'] }); qc.invalidateQueries({ queryKey: ['products'] }); toast('Product archived'); setConfirm(null) } })
   return (
     <div>
       <div className="flex flex-wrap items-center justify-between gap-3"><h1 className="text-4xl">Products</h1><button className="btn-primary" onClick={() => setEditing('new')}><Plus size={18} aria-hidden /> New product</button></div>
+      <nav className="mt-5 flex flex-wrap gap-2" aria-label="Filter products by stock status">
+        {([
+          { label: 'All products', value: '', to: '/admin/products' },
+          { label: 'In stock', value: 'in_stock', to: '/admin/products?availability=in_stock&active=true' },
+          { label: 'Out of stock', value: 'out_of_stock', to: '/admin/products?availability=out_of_stock&active=true' },
+        ]).map(({ label, value, to }) => (
+          <Link key={label} to={to} onClick={() => setPage(1)} aria-current={availability === value ? 'page' : undefined}
+            className={`rounded-brand border px-4 py-2 text-sm font-medium ${availability === value ? 'border-burgundy bg-burgundy text-white' : 'border-taupe/30 hover:border-burgundy hover:text-burgundy'}`}>
+            {label}
+          </Link>
+        ))}
+      </nav>
       <div className="mt-5 flex flex-wrap gap-3">
         <input className="input max-w-sm" type="search" placeholder="Search products" aria-label="Search products" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1) }} />
         <select className="input max-w-[14rem]" aria-label="Filter by section" value={sectionFilter} onChange={(e) => { setSectionFilter(e.target.value); setPage(1) }}><option value="">All sections</option>{cats.map((c) => <option key={c.id} value={c.slug}>{c.name}</option>)}</select>
       </div>
       <div className="card mt-4 overflow-x-auto">
-        {isLoading ? <Skeleton className="h-48" /> : !data?.results.length ? <Empty title="No products yet" text="Create your first product to see it in the store." /> : (
+        {isLoading ? <Skeleton className="h-48" /> : !data?.results.length ? <Empty title={availability === 'in_stock' ? 'No in-stock products' : availability === 'out_of_stock' ? 'No out-of-stock products' : 'No products yet'} text={availability ? 'No active products match this stock status.' : 'Create your first product to see it in the store.'} /> : (
           <table className="w-full min-w-[720px] text-left text-sm">
             <thead className="border-b border-taupe/20 text-xs uppercase tracking-wider text-muted"><tr><th className="p-3">Product</th><th>Section</th><th>Price</th><th>Stock</th><th>Status</th><th className="pr-3 text-right">Actions</th></tr></thead>
             <tbody className="divide-y divide-taupe/15">{data.results.map((p) => (

@@ -203,6 +203,19 @@ class SectionTests(TestCase):
         pub = [x for x in APIClient().get('/api/categories/').json() if x['name'] == 'Makeup'][0]
         self.assertEqual(pub['product_count'], 1)
 
+    def test_admin_inventory_filters_show_active_in_stock_and_out_of_stock_products(self):
+        mk = Category.objects.get(name='Makeup')
+        self.add_product(mk.id, 'Available', stock=2)
+        self.add_product(mk.id, 'Unavailable', stock=0)
+        archived = self.add_product(mk.id, 'Archived', stock=0)
+        self.c.delete(f"/api/admin/products/{archived['id']}/")
+
+        in_stock = self.c.get('/api/admin/products/?availability=in_stock&active=true').json()
+        out_of_stock = self.c.get('/api/admin/products/?availability=out_of_stock&active=true').json()
+
+        self.assertEqual([p['name'] for p in in_stock['results']], ['Available'])
+        self.assertEqual([p['name'] for p in out_of_stock['results']], ['Unavailable'])
+
     def test_reorder_controls_storefront_order(self):
         ids = {c.name: c.id for c in Category.objects.all()}
         r = self.c.post('/api/admin/categories/reorder/', {'ids': [ids['Makeup'], ids['Accessories'], ids['Fragrance']]}, format='json')

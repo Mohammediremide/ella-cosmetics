@@ -17,6 +17,7 @@ from .serializers import (AdminCategorySerializer, AdminProductSerializer, Categ
 class ProductFilter(df.FilterSet):
     category = df.CharFilter(field_name='category__slug')
     availability = df.ChoiceFilter(choices=[('in_stock', ''), ('out_of_stock', '')], method='filter_availability')
+    active = df.BooleanFilter(field_name='is_active')
     featured = df.BooleanFilter(field_name='is_featured')
     new = df.BooleanFilter(method='filter_new')
 
